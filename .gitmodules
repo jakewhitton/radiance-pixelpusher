@@ -1,0 +1,3 @@
+[submodule "lib/BlockingCollection"]
+	path = lib/BlockingCollection
+	url = https://github.com/CodeExMachina/BlockingCollection
