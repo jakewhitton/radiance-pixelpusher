@@ -1,10 +1,54 @@
 #include <iostream>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <thread>
+#include "BlockingCollection.h"
+#include "LuxServer.h"
+#include "PixelPusherClient.h"
+#include "Frame.h"
+#include "Log.h"
 
-using namespace std;
+using std::cin;
+using std::thread;
+
+using code_machina::BlockingQueue;
 
 int main()
 {
-	cout << "Hello, world!" << endl;
+
+	INFO("Issue an EOF (Ctrl + D) to terminate...");
+
+	// Queue for producer-consumer pattern
+	const int QUEUE_SIZE = 10;
+	BlockingQueue<Frame> queue(QUEUE_SIZE);
+
+	INFO("Initializing Lux client");
+	LuxServer luxServer {queue};
+
+	INFO("Initializing Pixel Pusher client");
+	PixelPusherClient pixelPusherClient {queue};
+
+	thread luxServerThread {std::ref(luxServer)};                 // automatically starts
+	thread pixelPusherClientThread {std::ref(pixelPusherClient)}; // automatically starts
+
+	// Spin until EOF is detected
+	cin.get();
+	while (!cin.eof())
+	{
+		cin.get();
+	}
+
+	// Make the queue unable to accept new frames
+	//
+	// The code for LuxServer and PixelPusherClient listen for the completion
+	// of the queue and the processing of the last item in a completed queue,
+	// respectively, as signals to safely terminate their threads.
+	queue.complete_adding();
+
+	// Join with threads and then terminate program
+	//
+	// Note : not doing this just causes a crash because terminating the main thread
+	// while other threads are active causes the execution of the other threads to
+	// stop abruptly, leaving them no time to clean up things like file descriptors
+	// for sockets or even calling object destructors).
+	luxServerThread.join();
+	pixelPusherClientThread.join();
 }
