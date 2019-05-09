@@ -20,16 +20,18 @@ public:
 	                                * DANCE_FLOOR_HEIGHT // Pixel data
 	                                * 3);
 	Frame();
-	Frame(const Frame & frame);
 
+	Frame(const Frame & frame);
 	Frame(Frame && frame);
 
 	Frame & operator=(const Frame & frame);
+	Frame & operator=(Frame && frame);
 
 	~Frame();
 
 	size_t size();
 
+	static Frame createRainbowFrame();
 	static Frame createFrame(uint8_t r, uint8_t g, uint8_t b);
 
 	const void * data();

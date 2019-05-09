@@ -20,7 +20,8 @@ LuxServer::LuxServer(BlockingQueue<Frame> & queue)
 
 Frame LuxServer::getNewFrame()
 {
-	return Frame::createFrame(0, 0, 255);
+	//return Frame::createFrame(255, 0, 255);
+	return Frame::createRainbowFrame();
 }
 
 void LuxServer::operator()()
