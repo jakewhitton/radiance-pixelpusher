@@ -35,12 +35,7 @@ void PixelPusherClient::operator()()
 {
 	for (auto frame : _queue)
 	{
-		printInfo(serverInfo);
-		uint32_t * data = (uint32_t *)frame.data();
-
 		int bytesWritten = sendto(_sockfd, frame.data(), Frame::SIZE, 0, serverInfo->ai_addr, serverInfo->ai_addrlen);
-
-		INFO("Packet %08X %08X wrote %d bytes", data[0], data[1], bytesWritten);
 
 		if (bytesWritten == -1)
 		{
@@ -52,7 +47,6 @@ void PixelPusherClient::operator()()
 			ERR("Only wrote %d bytes / %d bytes", bytesWritten, Frame::SIZE);
 			exit(1);
 		}
-		usleep(100000);
 	}
 }
 
