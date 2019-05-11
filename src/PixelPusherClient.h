@@ -3,19 +3,23 @@
 
 #include "BlockingCollection.h"
 #include "Frame.h"
-#include <netdb.h>
 
 class PixelPusherClient
 {
-	code_machina::BlockingQueue<Frame> & _queue;
-	int _sockfd; // Socket file descriptor
-	addrinfo * getaddrinfoResults;
-	const addrinfo * serverInfo;
+	using queue_t = code_machina::BlockingQueue<Frame>;
 
-	void populateSockets();
+	queue_t & _queue;
+	const int _sockfd;
+
+	static int getSocketFileDescriptor();
 
 public:
-	PixelPusherClient(code_machina::BlockingQueue<Frame> & queue);
+
+	// Don't allow copying or moving
+	PixelPusherClient(const PixelPusherClient &) = delete;
+	PixelPusherClient(PixelPusherClient &&)      = delete;
+
+	PixelPusherClient(queue_t & queue);
 	~PixelPusherClient();
 
 	void operator()();

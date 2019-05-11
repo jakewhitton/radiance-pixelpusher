@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 // LuxServer config
-constexpr const char * LUXSERVER_PORT = "9001"; // Radiance default
+constexpr const char * LUXSERVER_PORT = "11647"; // Radiance default
 
 // PixelPusherClient config
 constexpr const char * PIXELPUSHER_PORT      = "9897";
@@ -11,5 +11,8 @@ constexpr const char * PIXELPUSHER_LOCATION  = "192.168.0.5"; // Can be IP or ho
 // Dance floor config
 constexpr const int DANCE_FLOOR_WIDTH  = 12;
 constexpr const int DANCE_FLOOR_HEIGHT = 16;
+
+constexpr const int frameRate = 30;
+constexpr const int frameTime = 1000 / frameRate; // in ms
 
 #endif
