@@ -38,19 +38,17 @@ void LuxServer::operator()()
 {
 	while (!_queue.is_adding_completed())
 	{
-		// Accept a connection
+		// Accept a connection from radiance
 		//
 		// Note: in getSocketFileDescriptor(), the socket is configured to be non-blocking.
 		// That means that calls to accept will fail with EAGAIN or EWOULDBLOCK if a
 		// connection isn't available.  This is so we can continuously check exit condition.
 		sockaddr connectionInfo;
 		socklen_t bytesWritten;
-		INFO("Accepting");
+		INFO("Waiting for radiance to connect to localhost:%s", LUXSERVER_PORT);
 		int sockfd = accept(_serversockfd, &connectionInfo, &bytesWritten);
 		while (sockfd == -1)
 		{
-			INFO("I'm trying to connect, but rejection is so scary");
-
 			// If termination condition happened while waiting for a connection, terminate
 			if (_queue.is_adding_completed())
 			{
@@ -66,9 +64,9 @@ void LuxServer::operator()()
 
 			sockfd = accept(_serversockfd, &connectionInfo, &bytesWritten);
 
-			sleep(1);
+			usleep(250000);
 		}
-		INFO("Accepted");
+		INFO("Radiance connected");
 
 		// If paranoid about unauthorized clients connecting to the server, this would be
 		// the place to place some kind of checks to ensure only specific types of clients
