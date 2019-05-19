@@ -9,8 +9,6 @@
 #include "Log.h"
 #include "RadianceRequestHandler.h"
 
-#include "helper.h"
-
 /*
  * All of the socket code was adapted from Beejus' guide on network programming
  * in C, which is located at:
@@ -142,8 +140,6 @@ int LuxServer::getSocketFileDescriptor()
                         sockfd = -1;
                         continue;
                 }
-
-		printInfo(entry);
 
                 // Socket was created and is listening on port; stop trying
                 break;

@@ -14,9 +14,6 @@ class RadianceRequestHandler
 
 	char frameBuffer[5 + DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * sizeof (uint32_t)];
 
-	sendAll(const char * message, const size_t messageSize);
-	readAll(char * buffer, const size_t bufferSize);
-
 	void sendLookupCoordinates2D();
 	void sendGetFrame(uint32_t delay);
 	void getAndPushFrames();

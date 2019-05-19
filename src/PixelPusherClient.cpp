@@ -8,8 +8,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include "helper.h"
-
 /*
  * All of the socket code was adapted from Beejus' guide on network programming
  * in C, which is located at:

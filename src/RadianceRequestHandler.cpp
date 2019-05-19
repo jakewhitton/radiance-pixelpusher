@@ -3,8 +3,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include "Log.h"
+#include "SocketUtilities.h"
+
+using code_machina::BlockingCollectionStatus;
 
 RadianceRequestHandler::RadianceRequestHandler(const int sockfd, queue_t & queue, bool & shouldTerminate)
 	: _queue(queue)
@@ -30,38 +34,34 @@ public:
 
 void RadianceRequestHandler::operator()()
 {
-	// Handling a radiance request involves three steps:
-	//
-	//   1. Send a "Lookup coordinates 2D" message specifying an array of points in uv
-	//      space for radiance to sample.  This decides which pixels are included in a
-	//      frame.
-	//
-	//   2. Send a "Get frame" message, specifying a delay which radiance should wait
-	//      before sending another frame unprompted.  If the delay is 0, it will wait
-	//      for the next "Get frame" message to send the next frame.
-	//
-	//   3. Listen for a "Frame" messages, convert the frames into a pixel pusher
-	//      friendly format, and then push it to the queue.
-	
-	// If, at any time, one of the steps detects that _shouldTerminate is set to true,
-	// a RadianceRequestHandlerInterruptedException will be thrown, and control will
-	// be given back to this method so it can finish the handler.
-
 	try
 	{
-		// Step 1
-		INFO("Step 1: sendLookupCoordinates2D()");
+		// Handling a radiance request involves three steps:
+		//
+		//   1. Send a "Lookup coordinates 2D" message specifying an array of points in uv
+		//      space for radiance to sample.  This decides which pixels are included in a
+		//      frame.
+                //
 		sendLookupCoordinates2D();
 
-		// Step 2
-		INFO("Step 2: sendLookupCoordinates2D()");
+		//   2. Send a "Get frame" message, specifying a delay which radiance should wait
+		//      before sending another frame unprompted.  If the delay is 0, it will wait
+		//      for the next "Get frame" message to send the next frame.
+		//
 		sendGetFrame(frameTime);
 
-		// Step 3
-		INFO("Step 3: getAndPushFrames()");
+		//   3. Listen for a "Frame" messages, convert the frames into a pixel pusher
+		//      friendly format, and then push it to the queue.
+		//
 		getAndPushFrames();
+		
+		// If, at any time, one of the steps detects that _shouldTerminate is set to true,
+		// a RadianceRequestHandlerInterruptedException will be thrown, and control will
+		// be given back to this method so it can finish the handler.
 	}
 	catch (RadianceRequestHandlerInterruptedException e)
+	{ }
+	catch (SocketIOInterruptedException e)
 	{ }
 }
 
@@ -74,92 +74,6 @@ enum Commands
 	PHYSICAL_COORDINATES_2D = 4,
 	GEOMETRY_2D = 5
 };
-
-// Adapted from:
-//   https://stackoverflow.com/questions/1001307/detecting-endianness-programmatically-in-a-c-program
-bool isBigEndian()
-{
-    union
-    {
-        uint32_t i;
-        char c[4];
-    } bint = {0x01020304};
-
-    return bint.c[0] == 1;
-}
-
-uint32_t toLittleEndian(uint32_t x)
-{
-	if (!isBigEndian())
-	{
-		uint8_t temp;
-		uint8_t * p = (uint8_t *)&x;
-		
-		// Swap outer bytes
-		temp = p[0];
-		p[0] = p[3];
-		p[3] = temp;
-		
-		// Swap inner bytes
-		temp = p[1];
-		p[1] = p[2];
-		p[2] = temp;
-	}
-
-	return x;
-}
-
-RadianceRequestHandler::sendAll(const char * message, const size_t messageSize)
-{
-	int bytesToWrite = messageSize;
-	int bytesWritten = 0;
-
-	while (bytesWritten < bytesToWrite)
-	{
-
-		int newBytesWritten = send(_sockfd, message, messageSize, 0);
-		while (newBytesWritten == -1)
-		{
-			if (errno != EAGAIN && errno != EWOULDBLOCK)
-			{
-				// Writing to socket has caused an error other than needing to block temporarily
-				ERR("Failed to send to socket %d: %s", _sockfd, strerror(errno));
-				exit(1);
-			}
-
-			bytesWritten = send(_sockfd, message, sizeof message, 0);
-		}
-
-		bytesWritten += newBytesWritten;
-	}
-}
-
-void RadianceRequestHandler::readAll(char * buffer, const size_t bufferSize)
-{
-	// Read first four bytes, which indicate the length of the rest of the message
-	int bytesRead = 0;
-	int bytesToRead = 4;
-	while (bytesRead < bytesToRead)
-	{
-		int newBytesRead = recv(_sockfd, buffer, bytesToRead);
-		while (newBytesRead == -1)
-		{
-			if (errno != EAGAIN && errno != EWOULDBLOCK)
-			{
-				// Reading from socket has caused an error other than needing to block temporarily
-				ERR("Failed to send to socket %d: %s", _sockfd, strerror(errno));
-				exit(1);
-			}
-
-			usleep(5000);
-
-			newBytesRead = recv(_sockfd, buffer, bytesToRead);
-		}
-
-		bytesRead += newBytesRead;
-	}
-	
-}
 
 void RadianceRequestHandler::sendLookupCoordinates2D()
 {
@@ -193,10 +107,10 @@ void RadianceRequestHandler::sendLookupCoordinates2D()
 	uint32_t * lengthLocation = (uint32_t *)message;
 	uint32_t * dataLocation = (uint32_t *)(message + 5);
 
-	*lengthLocation = toLittleEndian(sizeof(message) - 4);
-	*dataLocation   = toLittleEndian(frameTime * 1000);
+	*lengthLocation = SocketUtilities::hostToLittleEndian(sizeof(message) - 4);
+	*dataLocation   = SocketUtilities::hostToLittleEndian(frameTime * 1000);
 
-	sendAll(message, 5 + numberOfPixels * 2 * sizeof(float));
+	SocketUtilities::sendAll(_sockfd, message, 5 + numberOfPixels * 2 * sizeof(float), _shouldTerminate);
 
 	delete[] message;
 }
@@ -213,10 +127,10 @@ void RadianceRequestHandler::sendGetFrame(uint32_t delay)
 	uint32_t * lengthLocation = (uint32_t *)message;
 	uint32_t * dataLocation = (uint32_t *)(message + 5);
 
-	*lengthLocation = toLittleEndian(sizeof message - 4);
-	*dataLocation   = toLittleEndian(delay);
+	*lengthLocation = SocketUtilities::hostToLittleEndian(sizeof message - 4);
+	*dataLocation   = SocketUtilities::hostToLittleEndian(delay);
 
-	sendAll(message, sizeof message);
+	SocketUtilities::sendAll(_sockfd, message, sizeof message, _shouldTerminate);
 }
 
 void RadianceRequestHandler::getAndPushFrames()
@@ -226,7 +140,7 @@ void RadianceRequestHandler::getAndPushFrames()
 		Frame frame;
 		uint8_t * pixelPusherFrame = (uint8_t *)(frame.data() + 5);
 		
-		readAll(frameBuffer, sizeof frameBuffer);
+		SocketUtilities::recvAll(_sockfd, frameBuffer, sizeof frameBuffer, _shouldTerminate);
 		uint8_t * radianceFrame = (uint8_t *)(frameBuffer + 5);
 
 		for (int i = 0; i < DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT; ++i)
@@ -246,15 +160,18 @@ void RadianceRequestHandler::getAndPushFrames()
 			pixelPusherFrame[3*i + 2] = bAlphaAdjusted;
 		}
 
-		BlockingCollectionStatus status = _queue.try_add(std::move(Frame), std::chrono::milliseconds(250));
+		BlockingCollectionStatus status = _queue.try_add(frame);
 		while (status == BlockingCollectionStatus::TimedOut)
 		{
 			if (_shouldTerminate)
 			{
-				throw RadianceRequestHandlerInterruptedException;
+				throw RadianceRequestHandlerInterruptedException();
 			}
 
-			status = _queue.try_add(std::move(Frame), std::chrono::milliseconds(250));
+			status = _queue.try_add(std::move(frame));
+
+			const int timeoutMilliseconds = 100;
+			usleep(timeoutMilliseconds * 1000);
 		}
 	}
 }

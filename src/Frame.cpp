@@ -57,9 +57,9 @@ size_t size()
 	return sizeof (uint8_t *);
 }
 
-const void * Frame::data()
+const char * Frame::data()
 {
-	return (const void *)_data;
+	return (const char *)_data;
 }
 
 array<uint8_t, DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * 3> createPixelData()
