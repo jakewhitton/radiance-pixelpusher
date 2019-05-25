@@ -6,8 +6,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <exception>
-#include "Log.h"
-#include "RadianceRequestHandler.h"
+#include "misc/Log.h"
 
 /*
  * All of the socket code was adapted from Beejus' guide on network programming

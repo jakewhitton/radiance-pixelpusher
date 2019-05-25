@@ -1,5 +1,4 @@
 #include "PixelPusherClient.h"
-#include "Log.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -7,6 +6,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "misc/Log.h"
 
 /*
  * All of the socket code was adapted from Beejus' guide on network programming
@@ -29,6 +29,7 @@ void PixelPusherClient::operator()()
 {
 	for (auto frame : _queue)
 	{
+		INFO("Writing packet");
 		int bytesWritten = send(_sockfd, frame.data(), Frame::SIZE, 0);
 
 		if (bytesWritten == -1)

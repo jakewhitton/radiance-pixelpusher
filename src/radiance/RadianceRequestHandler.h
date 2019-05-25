@@ -1,18 +1,17 @@
 #ifndef RADIANCEREQUESTHANDLER_H
 #define RADIANCEREQUESTHANDLER_H
 
-#include "BlockingCollection.h"
-#include "Frame.h"
+#include "pixelpusher/PixelPusherClient.h"
 
 class RadianceRequestHandler
 {
-	using queue_t = code_machina::BlockingQueue<Frame>;
+	using queue_t = PixelPusherClient::queue_t;
 
 	queue_t & _queue;
 	const int _sockfd;
 	bool & _shouldTerminate;
 
-	char frameBuffer[5 + DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * sizeof (uint32_t)];
+	char frameBuffer[DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * sizeof (uint32_t)];
 
 	void sendLookupCoordinates2D();
 	void sendGetFrame(uint32_t delay);

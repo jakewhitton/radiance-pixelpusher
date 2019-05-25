@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
-#include "Log.h"
-#include "SocketUtilities.h"
+#include "misc/Log.h"
+#include "misc/SocketUtilities.h"
 
 using code_machina::BlockingCollectionStatus;
 
@@ -54,7 +54,7 @@ void RadianceRequestHandler::operator()()
 		//      friendly format, and then push it to the queue.
 		//
 		getAndPushFrames();
-		
+
 		// If, at any time, one of the steps detects that _shouldTerminate is set to true,
 		// a RadianceRequestHandlerInterruptedException will be thrown, and control will
 		// be given back to this method so it can finish the handler.
@@ -83,7 +83,12 @@ void RadianceRequestHandler::sendLookupCoordinates2D()
 	//   Data: 2 * sizeof float * DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT bytes, array of floats
 	
 	const int numberOfPixels = DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT;
+
 	char * message = new char[5 + numberOfPixels * 2 * sizeof(float)] {'x', 'x', 'x', 'x', LOOKUP_COORDINATES_2D};
+
+
+	uint32_t * lengthLocation = (uint32_t *)message;
+	*lengthLocation = SocketUtilities::hostToLittleEndian(1 + numberOfPixels * 2 * sizeof(float));
 
 	float * uvCoordinates = (float *)(message + 6);
 
@@ -104,12 +109,6 @@ void RadianceRequestHandler::sendLookupCoordinates2D()
 		uvCoordinates[2*i + 1] = y;
 	}
 
-	uint32_t * lengthLocation = (uint32_t *)message;
-	uint32_t * dataLocation = (uint32_t *)(message + 5);
-
-	*lengthLocation = SocketUtilities::hostToLittleEndian(sizeof(message) - 4);
-	*dataLocation   = SocketUtilities::hostToLittleEndian(frameTime * 1000);
-
 	SocketUtilities::sendAll(_sockfd, message, 5 + numberOfPixels * 2 * sizeof(float), _shouldTerminate);
 
 	delete[] message;
@@ -125,6 +124,7 @@ void RadianceRequestHandler::sendGetFrame(uint32_t delay)
 	char message[] {'x', 'x', 'x', 'x', GET_FRAME, 'x', 'x', 'x', 'x'};
 
 	uint32_t * lengthLocation = (uint32_t *)message;
+
 	uint32_t * dataLocation = (uint32_t *)(message + 5);
 
 	*lengthLocation = SocketUtilities::hostToLittleEndian(sizeof message - 4);
@@ -141,6 +141,7 @@ void RadianceRequestHandler::getAndPushFrames()
 		uint8_t * pixelPusherFrame = (uint8_t *)(frame.data() + 5);
 		
 		SocketUtilities::recvAll(_sockfd, frameBuffer, sizeof frameBuffer, _shouldTerminate);
+
 		uint8_t * radianceFrame = (uint8_t *)(frameBuffer + 5);
 
 		for (int i = 0; i < DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT; ++i)

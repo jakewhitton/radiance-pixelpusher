@@ -1,15 +1,14 @@
 #ifndef LUXSERVER_H
 #define LUXSERVER_H
 
-#include "BlockingCollection.h"
-#include "Frame.h"
+#include "pixelpusher/PixelPusherClient.h"
 #include "RadianceRequestHandler.h"
 #include <memory>
 #include <thread>
 
 class LuxServer
 {
-	using queue_t = code_machina::BlockingQueue<Frame>;
+	using queue_t = PixelPusherClient::queue_t;
 	
 	queue_t & _queue;
 	const int _serversockfd;

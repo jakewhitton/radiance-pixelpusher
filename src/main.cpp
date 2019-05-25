@@ -1,15 +1,12 @@
 #include <iostream>
 #include <thread>
-#include "BlockingCollection.h"
-#include "LuxServer.h"
-#include "PixelPusherClient.h"
-#include "Frame.h"
-#include "Log.h"
+#include "radiance/LuxServer.h"
+#include "pixelpusher/PixelPusherClient.h"
+#include "pixelpusher/Frame.h"
+#include "misc/Log.h"
 
 using std::cin;
 using std::thread;
-
-using code_machina::BlockingQueue;
 
 int main()
 {
@@ -18,7 +15,7 @@ int main()
 
 	// Queue for producer-consumer pattern
 	const int QUEUE_SIZE = 10;
-	BlockingQueue<Frame> queue(QUEUE_SIZE);
+	PixelPusherClient::queue_t queue(QUEUE_SIZE);
 
 	INFO("Initializing Lux client");
 	LuxServer luxServer {queue};

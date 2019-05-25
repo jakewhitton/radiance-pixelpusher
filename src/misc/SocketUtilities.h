@@ -15,11 +15,9 @@ class SocketIOInterruptedException : public std::exception
 class SocketUtilities
 {
 public:
-	static void recvAll(const int sockfd, char * buffer, const size_t bytesToRead, const bool & terminate);
+	static void recvAll(const int sockfd, void * buffer, const size_t bytesToRead, const bool & terminate);
 
-	static void sendAll(const int sockfd, const char * message, const size_t bytesToWrite, const bool & terminate);
-
-	static void readRadianceMessage(const int sockfd, uint8_t * command, char * dataBuffer, const size_t dataBufferLength, const bool & terminate);
+	static void sendAll(const int sockfd, const void * message, const size_t bytesToWrite, const bool & terminate);
 
 	static uint32_t hostToLittleEndian(uint32_t x);
 
