@@ -8,6 +8,6 @@ set(CMAKE_CXX_FLAGS "-Wall -pthread")
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
-file(GLOB SOURCES "src/*/*.cpp" "src/*.cpp")
+file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 add_executable(run.exe ${SOURCES})

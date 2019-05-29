@@ -12,9 +12,23 @@ class SocketIOInterruptedException : public std::exception
 	}
 };
 
+enum class SocketType
+{
+	CLIENT,
+	SERVER
+};
+
+enum class Protocol
+{
+	TCP,
+	UDP
+};
+
 class SocketUtilities
 {
 public:
+	static int getSocket(const SocketType socketType, const Protocol protocol, const char * location, const char * port);
+
 	static void recvAll(const int sockfd, void * buffer, const size_t bytesToRead, const bool & terminate);
 
 	static void sendAll(const int sockfd, const void * message, const size_t bytesToWrite, const bool & terminate);

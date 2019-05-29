@@ -1,13 +1,11 @@
 #ifndef RADIANCEREQUESTHANDLER_H
 #define RADIANCEREQUESTHANDLER_H
 
-#include "pixelpusher/PixelPusherClient.h"
+#include "producerconsumerprogram/FrameQueue.h"
 
 class RadianceRequestHandler
 {
-	using queue_t = PixelPusherClient::queue_t;
-
-	queue_t & _queue;
+	FrameQueue & _queue;
 	const int _sockfd;
 	bool & _shouldTerminate;
 
@@ -23,7 +21,7 @@ public:
 	RadianceRequestHandler(const RadianceRequestHandler &) = delete;
 	RadianceRequestHandler(RadianceRequestHandler &&) = delete;
 
-	RadianceRequestHandler(const int sockfd, queue_t & queue, bool & shouldTerminate);
+	RadianceRequestHandler(const int sockfd, FrameQueue & queue, bool & shouldTerminate);
 	~RadianceRequestHandler();
 
 	void operator()();

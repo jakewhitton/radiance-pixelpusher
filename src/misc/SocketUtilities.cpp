@@ -5,12 +5,109 @@
 #include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
 #include <assert.h>
 #include "misc/Log.h"
 #include "config.h"
 
+/*
+ * All of the socket code was adapted from Beejus' guide on network programming in C, which is located at:
+ *
+ * http://beej.us/guide/bgnet/html/multi/
+ */
+
+int SocketUtilities::getSocket(const SocketType socketType, const Protocol protocol, const char * location, const char * port)
+{
+	int status;
+
+	// Initialize hints
+	addrinfo hints;
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family = AF_UNSPEC;    // No preference between IPv4 and IPv6
+        hints.ai_socktype = (protocol == Protocol::TCP) ? SOCK_STREAM : SOCK_DGRAM;
+
+	addrinfo * getaddrinfoResults;
+
+	// Find available IP connection candidates for hostname
+        status = getaddrinfo(location, port, &hints, &getaddrinfoResults);
+        if (status != 0) {
+            ERR("Failed getaddrinfo: %s", gai_strerror(status));
+            exit(1);
+        }
+
+	// Obtain socket file descriptor that is connected to the pixel pusher
+	int sockfd = -1;
+	for (addrinfo * entry = getaddrinfoResults; entry != nullptr; entry = entry->ai_next)
+	{
+		// Get file descriptor
+		sockfd = socket(entry->ai_family, entry->ai_socktype, entry->ai_protocol);
+		if (sockfd == -1)
+		{
+			continue;
+		}
+
+		switch (socketType)
+		{
+		case SocketType::CLIENT:
+		{
+			// Try to connect
+			status = connect(sockfd, entry->ai_addr, entry->ai_addrlen);
+			if (status == -1)
+			{
+				// This socket couldn't connect; close it and try another
+				close(sockfd);
+				sockfd = -1;
+				continue;
+			}
+		}
+		case SocketType::SERVER:
+		{
+			// Try to bind to port
+			status = bind(sockfd, entry->ai_addr, entry->ai_addrlen);
+			if (status == -1) 
+			{
+				// This socket couldn't bind; close it and try another
+				close(sockfd);
+				sockfd = -1; 
+				continue;
+			}
+			INFO("Connecting to port %s", port);
+
+			// Try to listen on port
+			const int connectionQueueSize = 10; // configures max number of pending connection requests
+			status = listen(sockfd, connectionQueueSize);
+			if (status == -1) 
+			{
+				// This socket couldn't listen; close it and try another
+				close(sockfd);
+				sockfd = -1; 
+				continue;
+			}
+		}
+		}
+
+		// Socket was configured correctly
+		break;
+	}
+
+	// Free linked list of IP connection candidates for hostname
+	freeaddrinfo(getaddrinfoResults);
+
+	if (sockfd == -1)
+	{
+		ERR("Could not get %s %s socket for %s:%s", (socketType == SocketType::SERVER) ? "server" : "client",
+		                                            (protocol == Protocol::TCP) ? "TCP" : "UDP",
+							    location,
+							    port);
+		exit(1);
+	}
+
+	return sockfd;
+}
+
 /**
- * Either sends or recvs ${totalBytes} bytes from sockfd, depending on parameters.  Terminates when terminate is detected to be true.
+ * Either sends or recvs ${totalBytes} bytes from ${sockfd}, depending on parameters.  Terminates when ${terminate} is detected to be true.
  *
  * @param sockfd the socket file descriptor that this socket I/O operation is acting on
  * @param buffer a pointer to a buffer of at least ${totalBytes} bytes, should be nullptr if operation is a send

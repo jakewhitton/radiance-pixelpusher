@@ -10,7 +10,7 @@
 
 using code_machina::BlockingCollectionStatus;
 
-RadianceRequestHandler::RadianceRequestHandler(const int sockfd, queue_t & queue, bool & shouldTerminate)
+RadianceRequestHandler::RadianceRequestHandler(const int sockfd, FrameQueue & queue, bool & shouldTerminate)
 	: _queue(queue)
 	, _sockfd(sockfd)
 	, _shouldTerminate(shouldTerminate)
@@ -161,18 +161,15 @@ void RadianceRequestHandler::getAndPushFrames()
 			pixelPusherFrame[3*i + 2] = bAlphaAdjusted;
 		}
 
-		BlockingCollectionStatus status = _queue.try_add(frame);
-		while (status == BlockingCollectionStatus::TimedOut)
+		bool added = _queue.add(frame, std::chrono::milliseconds(100));
+		while (!added)
 		{
 			if (_shouldTerminate)
 			{
 				throw RadianceRequestHandlerInterruptedException();
 			}
 
-			status = _queue.try_add(std::move(frame));
-
-			const int timeoutMilliseconds = 100;
-			usleep(timeoutMilliseconds * 1000);
+			added = _queue.add(frame, std::chrono::milliseconds(100));
 		}
 	}
 }
