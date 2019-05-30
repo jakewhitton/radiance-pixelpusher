@@ -4,13 +4,13 @@
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cassert>
 #include <sys/socket.h>
-#include "misc/Log.h"
 #include "misc/SocketUtilities.h"
+#include "misc/Log.h"
 
-using code_machina::BlockingCollectionStatus;
-
-RadianceRequestHandler::RadianceRequestHandler(const int sockfd, FrameQueue & queue, bool & shouldTerminate)
+RadianceRequestHandler::RadianceRequestHandler(const int sockfd, FrameQueue & queue,
+                                               const bool & shouldTerminate)
 	: _queue(queue)
 	, _sockfd(sockfd)
 	, _shouldTerminate(shouldTerminate)
@@ -22,15 +22,6 @@ RadianceRequestHandler::~RadianceRequestHandler()
 {
 	close(_sockfd);
 }
-
-class RadianceRequestHandlerInterruptedException
-{
-public:
-	const char * what() const throw ()
-	{
-		return "A radiance request handler was interrupted.";
-	}
-};
 
 void RadianceRequestHandler::operator()()
 {
@@ -56,23 +47,24 @@ void RadianceRequestHandler::operator()()
 		getAndPushFrames();
 
 		// If, at any time, one of the steps detects that _shouldTerminate is set to true,
-		// a RadianceRequestHandlerInterruptedException will be thrown, and control will
-		// be given back to this method so it can finish the handler.
+		// control will be given back to this method so it can finish the handler.
 	}
-	catch (RadianceRequestHandlerInterruptedException e)
-	{ }
-	catch (SocketIOInterruptedException e)
+	catch (OperationInterruptedException e)
 	{ }
 }
 
-enum Commands
+enum RadianceCommand
 {
-	DESCRIPTION = 0,
-	GET_FRAME = 1,
-	FRAME = 2,
-	LOOKUP_COORDINATES_2D = 3,
-	PHYSICAL_COORDINATES_2D = 4,
-	GEOMETRY_2D = 5
+	DESCRIPTION              = 0, // Get info about Radiance client
+	GET_FRAME                = 1, // Ask for a frame, MUST ISSUE LOOKUP_COORDINATES_2D FIRST
+	FRAME                    = 2, // Command for a frame message from Radiance
+	LOOKUP_COORDINATES_2D    = 3, // Give uv coordinates that identify pixel locations
+	PHYSICAL_COORDINATES_2D  = 4, // Give uv coordinates for radiance to visualize pixel locations
+	GEOMETRY_2D              = 5, // Give a png image to visualize pixels against (to see alpha)
+	LOOKUP_COORDINATES_3D    = 6, // Not yet supported by Radiance
+	PHYSICAL_COORDINATES_3D  = 7, // Not yet supported by Radiance
+	GEOMETRY_3D              = 8, // Not yet supported by Radiance
+	TUV_MAP                  = 9  // Not yet supported by Radiance
 };
 
 void RadianceRequestHandler::sendLookupCoordinates2D()
@@ -133,24 +125,27 @@ void RadianceRequestHandler::sendGetFrame(uint32_t delay)
 	SocketUtilities::sendAll(_sockfd, message, sizeof message, _shouldTerminate);
 }
 
+static void readRadianceMessage(const int sockfd, RadianceCommand * command, void * dataBuffer,
+                                const size_t dataBufferLength, const bool & terminate);
+
 void RadianceRequestHandler::getAndPushFrames()
 {
 	while (!_shouldTerminate)
 	{
+		RadianceCommand command;
+		readRadianceMessage(_sockfd, &command, rgbaBuffer, sizeof rgbaBuffer, _shouldTerminate);
+		assert(command == FRAME);
+
 		Frame frame;
 		uint8_t * pixelPusherFrame = (uint8_t *)(frame.data() + 5);
 		
-		SocketUtilities::recvAll(_sockfd, frameBuffer, sizeof frameBuffer, _shouldTerminate);
-
-		uint8_t * radianceFrame = (uint8_t *)(frameBuffer + 5);
-
 		for (int i = 0; i < DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT; ++i)
 		{
-			const int alpha = radianceFrame[4*i + 3];
+			const int alpha = rgbaBuffer[4*i + 3];
 
-			const int r = radianceFrame[4*i];
-			const int g = radianceFrame[4*i + 1];
-			const int b = radianceFrame[4*i + 2];
+			const int r = rgbaBuffer[4*i];
+			const int g = rgbaBuffer[4*i + 1];
+			const int b = rgbaBuffer[4*i + 2];
 
 			const uint8_t rAlphaAdjusted = r * alpha / 255;
 			const uint8_t gAlphaAdjusted = g * alpha / 255;
@@ -166,10 +161,46 @@ void RadianceRequestHandler::getAndPushFrames()
 		{
 			if (_shouldTerminate)
 			{
-				throw RadianceRequestHandlerInterruptedException();
+				return;
 			}
 
 			added = _queue.add(frame, std::chrono::milliseconds(100));
 		}
 	}
 }
+
+/*=================================== Helper functions ===================================*/
+static void readRadianceMessage(const int sockfd, RadianceCommand * command, void * dataBuffer,
+                                const size_t dataBufferLength, const bool & terminate)
+{
+	/*
+	 * Radiance messages have a specific format, which can be found at:
+	 *
+	 * https://github.com/zbanks/radiance/blob/master/light_output.md
+	 *
+	 * The format for a message is as follows:
+	 *
+	 * +---------------------------------------------------------------+
+	 * | Length (4 bytes) | Command (1 byte) | Data (Length - 1 bytes) |
+	 * +---------------------------------------------------------------+
+	 *
+	 * Note that length (and any other integral values longer than one byte) are assumed to
+	 * be little endian unless otherwise specified, so you must convert them to host endianness.
+	 */
+
+	// Read length from socket so we know how many bytes to read for rest of message
+	uint32_t lengthLittleEndian;
+	SocketUtilities::recvAll(sockfd, &lengthLittleEndian, sizeof lengthLittleEndian, terminate);
+	const uint32_t messageLength = SocketUtilities::littleEndianToHost(lengthLittleEndian);
+
+	// Read command from socket
+	uint8_t commandHolder;
+	SocketUtilities::recvAll(sockfd, &commandHolder, sizeof commandHolder, terminate);
+	assert(commandHolder < 10);
+	*command = static_cast<RadianceCommand>(commandHolder);
+
+	// Read data from socket
+	assert(dataBufferLength >= messageLength - 1);
+	SocketUtilities::recvAll(sockfd, dataBuffer, messageLength - 1, terminate);
+}
+/*========================================================================================*/

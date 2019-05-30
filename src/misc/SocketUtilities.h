@@ -4,7 +4,7 @@
 #include <exception>
 #include <cstdint>
 
-class SocketIOInterruptedException : public std::exception
+class OperationInterruptedException : public std::exception
 {
 	const char * what()
 	{

@@ -24,7 +24,7 @@ int SocketUtilities::getSocket(const SocketType socketType, const Protocol proto
 	// Initialize hints
 	addrinfo hints;
         memset(&hints, 0, sizeof hints);
-        hints.ai_family = AF_UNSPEC;    // No preference between IPv4 and IPv6
+        hints.ai_family = AF_UNSPEC; // No preference between IPv4 and IPv6
         hints.ai_socktype = (protocol == Protocol::TCP) ? SOCK_STREAM : SOCK_DGRAM;
 
 	addrinfo * getaddrinfoResults;
@@ -193,7 +193,7 @@ static void repeatUntilFullyProcessed(const int sockfd, void * buffer, const voi
 			}
 			else if (terminate)
 			{
-				throw SocketIOInterruptedException();
+				throw OperationInterruptedException();
 			}
 		}
 		while (newBytes == -1);

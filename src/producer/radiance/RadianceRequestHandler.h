@@ -7,9 +7,9 @@ class RadianceRequestHandler
 {
 	FrameQueue & _queue;
 	const int _sockfd;
-	bool & _shouldTerminate;
+	const bool & _shouldTerminate;
 
-	char frameBuffer[DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * sizeof (uint32_t)];
+	uint8_t rgbaBuffer[DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * sizeof (uint32_t)];
 
 	void sendLookupCoordinates2D();
 	void sendGetFrame(uint32_t delay);
@@ -21,7 +21,7 @@ public:
 	RadianceRequestHandler(const RadianceRequestHandler &) = delete;
 	RadianceRequestHandler(RadianceRequestHandler &&) = delete;
 
-	RadianceRequestHandler(const int sockfd, FrameQueue & queue, bool & shouldTerminate);
+	RadianceRequestHandler(const int sockfd, FrameQueue & queue, const bool & shouldTerminate);
 	~RadianceRequestHandler();
 
 	void operator()();

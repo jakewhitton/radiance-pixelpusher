@@ -85,7 +85,7 @@ void LuxServer::produceFrames(FrameQueue & frameQueue)
 
 		// Add a new request handler
 		_requestHandlerShouldTerminate = false;
-		_requestHandler = unique_ptr<RadianceRequestHandler> {new RadianceRequestHandler(sockfd, frameQueue, _requestHandlerShouldTerminate)};
+		_requestHandler = std::make_unique<RadianceRequestHandler>(sockfd, frameQueue, _requestHandlerShouldTerminate);
 		_requestHandlerThread = thread(std::ref(*_requestHandler));
 	}
 }
