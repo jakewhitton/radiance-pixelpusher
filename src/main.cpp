@@ -1,6 +1,7 @@
 #include <iostream>
 #include "producer/radiance/Radiance.h"
-#include "consumer/pixelpusher/PixelPusher.h"
+//#include "consumer/pixelpusher/PixelPusher.h"
+#include "consumer/visualizer/Visualizer.h"
 #include "dancefloor/DanceFloorProgram.h"
 #include "misc/Log.h"
 
@@ -14,9 +15,11 @@ int main()
 	const char * radiancePort = "11647";
 	Radiance producer {radiancePort};
 
-	const char * pixelPusherLocation = "192.168.0.5";
-	const char * pixelPusherPort = "9897";
-	PixelPusher consumer {pixelPusherLocation, pixelPusherPort};
+	//const char * pixelPusherLocation = "192.168.0.5";
+	//const char * pixelPusherPort = "9897";
+	//PixelPusher consumer {pixelPusherLocation, pixelPusherPort};
+	
+	Visualizer consumer;
 
 	DanceFloorProgram program {producer, consumer};
 
