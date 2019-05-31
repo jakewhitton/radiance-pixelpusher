@@ -1,29 +1,29 @@
-#ifndef LUXSERVER_H
-#define LUXSERVER_H
+#ifndef RADIANCE_H
+#define RADIANCE_H
 
 #include <memory>
 #include <thread>
 #include "producer/FrameProducer.h"
-#include "RadianceRequestHandler.h"
+#include "RequestHandler.h"
 
-class LuxServer
+class Radiance
 	: public FrameProducer
 {
 	const int _serversockfd;
 
 	// State to limit active clients to one at a time
 	bool _requestHandlerShouldTerminate;
-	std::unique_ptr<RadianceRequestHandler> _requestHandler;
+	std::unique_ptr<RequestHandler> _requestHandler;
 	std::thread _requestHandlerThread;
 
 public:
 
 	// Don't allow copying or moving
-	LuxServer(const LuxServer &) = delete;
-	LuxServer(LuxServer &&)      = delete;
+	Radiance(const Radiance &) = delete;
+	Radiance(Radiance &&)      = delete;
 
-	LuxServer(const char * port);
-	~LuxServer();
+	Radiance(const char * port);
+	~Radiance();
 
 	void produceFrames(FrameQueue & frameQueue) override;
 	void stop() override;

@@ -1,4 +1,4 @@
-#include "RadianceRequestHandler.h"
+#include "RequestHandler.h"
 #include "config.h"
 #include <cstdlib>
 #include <cstring>
@@ -9,7 +9,7 @@
 #include "misc/SocketUtilities.h"
 #include "misc/Log.h"
 
-RadianceRequestHandler::RadianceRequestHandler(const int sockfd, FrameQueue & queue,
+RequestHandler::RequestHandler(const int sockfd, FrameQueue & queue,
                                                const bool & shouldTerminate)
 	: _queue(queue)
 	, _sockfd(sockfd)
@@ -18,12 +18,12 @@ RadianceRequestHandler::RadianceRequestHandler(const int sockfd, FrameQueue & qu
 	fcntl(_sockfd, F_SETFL, O_NONBLOCK);
 }
 
-RadianceRequestHandler::~RadianceRequestHandler()
+RequestHandler::~RequestHandler()
 {
 	close(_sockfd);
 }
 
-void RadianceRequestHandler::operator()()
+void RequestHandler::operator()()
 {
 	try
 	{
@@ -67,7 +67,7 @@ enum RadianceCommand
 	TUV_MAP                  = 9  // Not yet supported by Radiance
 };
 
-void RadianceRequestHandler::sendLookupCoordinates2D()
+void RequestHandler::sendLookupCoordinates2D()
 {
 	// Packet contents:
 	//   Length: 4 bytes, MUST BE LITTLE ENDIAN
@@ -106,7 +106,7 @@ void RadianceRequestHandler::sendLookupCoordinates2D()
 	delete[] message;
 }
 
-void RadianceRequestHandler::sendGetFrame(uint32_t delay)
+void RequestHandler::sendGetFrame(uint32_t delay)
 {
 	// Packet contents:
 	//   Length: 4 bytes, MUST BE LITTLE ENDIAN
@@ -128,7 +128,7 @@ void RadianceRequestHandler::sendGetFrame(uint32_t delay)
 static void readRadianceMessage(const int sockfd, RadianceCommand * command, void * dataBuffer,
                                 const size_t dataBufferLength, const bool & terminate);
 
-void RadianceRequestHandler::getAndPushFrames()
+void RequestHandler::getAndPushFrames()
 {
 	while (!_shouldTerminate)
 	{

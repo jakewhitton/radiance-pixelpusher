@@ -1,5 +1,5 @@
 #include <iostream>
-#include "producer/radiance/LuxServer.h"
+#include "producer/radiance/Radiance.h"
 #include "consumer/pixelpusher/PixelPusher.h"
 #include "producerconsumerprogram/ProducerConsumerProgram.h"
 #include "misc/Log.h"
@@ -12,7 +12,7 @@ int main()
 	INFO("Issue an EOF (Ctrl + D) to terminate...");
 
 	const char * radiancePort = "11647";
-	LuxServer producer {radiancePort};
+	Radiance producer {radiancePort};
 
 	const char * pixelPusherLocation = "192.168.0.5";
 	const char * pixelPusherPort = "9897";

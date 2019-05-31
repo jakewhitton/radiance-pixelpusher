@@ -1,4 +1,4 @@
-#include "LuxServer.h"
+#include "Radiance.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -20,7 +20,7 @@ using std::thread;
 using std::exception;
 using std::unique_ptr;
 
-LuxServer::LuxServer(const char * port)
+Radiance::Radiance(const char * port)
 	: _serversockfd(SocketUtilities::getSocket(SocketType::SERVER, Protocol::TCP, "localhost", port))
 	, _requestHandlerShouldTerminate(true)
 	, _requestHandler(nullptr)
@@ -30,12 +30,12 @@ LuxServer::LuxServer(const char * port)
 	fcntl(_serversockfd, F_SETFL, O_NONBLOCK);
 }
 
-LuxServer::~LuxServer()
+Radiance::~Radiance()
 {
 	close(_serversockfd);
 }
 
-void LuxServer::produceFrames(FrameQueue & frameQueue)
+void Radiance::produceFrames(FrameQueue & frameQueue)
 {
 	while (true)
 	{
@@ -85,12 +85,12 @@ void LuxServer::produceFrames(FrameQueue & frameQueue)
 
 		// Add a new request handler
 		_requestHandlerShouldTerminate = false;
-		_requestHandler = std::make_unique<RadianceRequestHandler>(sockfd, frameQueue, _requestHandlerShouldTerminate);
+		_requestHandler = std::make_unique<RequestHandler>(sockfd, frameQueue, _requestHandlerShouldTerminate);
 		_requestHandlerThread = thread(std::ref(*_requestHandler));
 	}
 }
 
-void LuxServer::stop()
+void Radiance::stop()
 {
 
 }

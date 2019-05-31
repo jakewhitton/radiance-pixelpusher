@@ -1,9 +1,9 @@
-#ifndef RADIANCEREQUESTHANDLER_H
-#define RADIANCEREQUESTHANDLER_H
+#ifndef REQUESTHANDLER_H
+#define REQUESTHANDLER_H
 
 #include "producerconsumerprogram/FrameQueue.h"
 
-class RadianceRequestHandler
+class RequestHandler
 {
 	FrameQueue & _queue;
 	const int _sockfd;
@@ -18,11 +18,11 @@ class RadianceRequestHandler
 public:
 	
 	// Don't allow copying or moving
-	RadianceRequestHandler(const RadianceRequestHandler &) = delete;
-	RadianceRequestHandler(RadianceRequestHandler &&) = delete;
+	RequestHandler(const RequestHandler &) = delete;
+	RequestHandler(RequestHandler &&)      = delete;
 
-	RadianceRequestHandler(const int sockfd, FrameQueue & queue, const bool & shouldTerminate);
-	~RadianceRequestHandler();
+	RequestHandler(const int sockfd, FrameQueue & queue, const bool & shouldTerminate);
+	~RequestHandler();
 
 	void operator()();
 };
