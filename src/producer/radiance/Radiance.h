@@ -9,12 +9,16 @@
 class Radiance
 	: public FrameProducer
 {
+	// Server state
 	const int _serversockfd;
+	bool _terminateServer;
 
 	// State to limit active clients to one at a time
-	bool _requestHandlerShouldTerminate;
+	bool _terminateRequestHandler;
 	std::unique_ptr<RequestHandler> _requestHandler;
 	std::thread _requestHandlerThread;
+
+	void stopRequestHandler();
 
 public:
 

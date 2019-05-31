@@ -21,6 +21,9 @@ public:
 	RequestHandler(const RequestHandler &) = delete;
 	RequestHandler(RequestHandler &&)      = delete;
 
+	// Default constructor
+	//explicit RequestHandler();
+
 	RequestHandler(const int sockfd, FrameQueue & queue, const bool & shouldTerminate);
 	~RequestHandler();
 

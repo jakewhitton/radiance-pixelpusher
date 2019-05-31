@@ -106,6 +106,50 @@ int SocketUtilities::getSocket(const SocketType socketType, const Protocol proto
 	return sockfd;
 }
 
+int SocketUtilities::acceptConnection(const int serversockfd, const bool & terminate)
+{
+	// Accept a connection from radiance
+	const int numberOfFileDescriptors = 1;
+	const short int requestedEvent = POLLIN; // Poll for incoming connections
+	pollfd pollFileDescriptors[numberOfFileDescriptors] {{serversockfd, requestedEvent, 0}};
+
+	sockaddr connectionInfo;
+	socklen_t bytesWritten;
+
+	int sockfd = -1;
+
+	do
+	{
+		// If termination condition happened while waiting for a connection, terminate
+		if (terminate)
+		{
+			throw OperationInterruptedException();
+		}
+
+		const int timeout = 100; // ms
+		int status = poll(pollFileDescriptors, numberOfFileDescriptors, timeout);
+		if (status == -1)
+		{
+			ERR("Failed to poll socket %d: %s", serversockfd, strerror(errno));
+		}
+
+		if (pollFileDescriptors[0].revents & requestedEvent)
+		{
+			sockfd = accept(serversockfd, &connectionInfo, &bytesWritten);
+
+			// If a failure occurred that wasn't a normal nonblocking return, give error
+			if (sockfd == -1 && errno != EWOULDBLOCK && errno != EAGAIN)
+			{
+				ERR("Could not accept from socket %d: %s", serversockfd, strerror(errno));
+			}
+		}
+	}
+	while (sockfd == -1);
+
+	return sockfd;
+}
+
+
 /**
  * Either sends or recvs ${totalBytes} bytes from ${sockfd}, depending on parameters.  Terminates when ${terminate} is detected to be true.
  *

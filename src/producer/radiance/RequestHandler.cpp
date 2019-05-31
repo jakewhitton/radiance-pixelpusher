@@ -10,7 +10,7 @@
 #include "misc/Log.h"
 
 RequestHandler::RequestHandler(const int sockfd, FrameQueue & queue,
-                                               const bool & shouldTerminate)
+                               const bool & shouldTerminate)
 	: _queue(queue)
 	, _sockfd(sockfd)
 	, _shouldTerminate(shouldTerminate)
@@ -132,6 +132,10 @@ void RequestHandler::getAndPushFrames()
 {
 	while (!_shouldTerminate)
 	{
+		// TODO Refactor Frame to possibly write the radiance rgba data into a Frame buffer
+		// to improve cache locality by avoiding the copy from two distinct memory buffers
+		// that could be allocated at very different parts of the heap
+		
 		RadianceCommand command;
 		readRadianceMessage(_sockfd, &command, rgbaBuffer, sizeof rgbaBuffer, _shouldTerminate);
 		assert(command == FRAME);
