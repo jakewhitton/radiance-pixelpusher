@@ -1,7 +1,7 @@
 #ifndef FRAMEPRODUCER_H
 #define FRAMEPRODUCER_H
 
-#include "producerconsumerprogram/FrameQueue.h"
+#include "dancefloor/FrameQueue.h"
 
 class FrameProducer
 {

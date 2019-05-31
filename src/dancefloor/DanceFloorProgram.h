@@ -1,5 +1,5 @@
-#ifndef PRODUCERCONSUMERPROGRAM_H
-#define PRODUCERCONSUMERPROGRAM_H
+#ifndef DANCEFLOORPROGRAM_H
+#define DANCEFLOORPROGRAM_H
 
 #include <thread>
 #include "producer/FrameProducer.h"
@@ -8,7 +8,7 @@
 
 using queue_t = code_machina::BlockingQueue<Frame>;
 
-class ProducerConsumerProgram
+class DanceFloorProgram
 {
 	FrameQueue _queue;
 
@@ -19,7 +19,7 @@ class ProducerConsumerProgram
 	std::thread _consumerThread;
 
 public:
-	ProducerConsumerProgram(FrameProducer & producer, FrameConsumer & consumer);
+	DanceFloorProgram(FrameProducer & producer, FrameConsumer & consumer);
 
 	void start();
 	void stop();

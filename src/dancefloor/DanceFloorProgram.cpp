@@ -1,13 +1,13 @@
-#include "ProducerConsumerProgram.h"
+#include "DanceFloorProgram.h"
 
 using std::thread;
 
-ProducerConsumerProgram::ProducerConsumerProgram(FrameProducer & producer, FrameConsumer & consumer)
+DanceFloorProgram::DanceFloorProgram(FrameProducer & producer, FrameConsumer & consumer)
 	: _producer(producer)
 	, _consumer(consumer)
 { }
 
-void ProducerConsumerProgram::start()
+void DanceFloorProgram::start()
 {
 	_producerThread = thread([&]
 	{
@@ -20,7 +20,7 @@ void ProducerConsumerProgram::start()
 	});
 }
 
-void ProducerConsumerProgram::stop()
+void DanceFloorProgram::stop()
 {
 	_producer.stop();
 	_consumer.stop();

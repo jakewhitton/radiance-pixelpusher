@@ -1,7 +1,7 @@
 #include <iostream>
 #include "producer/radiance/Radiance.h"
 #include "consumer/pixelpusher/PixelPusher.h"
-#include "producerconsumerprogram/ProducerConsumerProgram.h"
+#include "dancefloor/DanceFloorProgram.h"
 #include "misc/Log.h"
 
 using std::cin;
@@ -18,7 +18,7 @@ int main()
 	const char * pixelPusherPort = "9897";
 	PixelPusher consumer {pixelPusherLocation, pixelPusherPort};
 
-	ProducerConsumerProgram program {producer, consumer};
+	DanceFloorProgram program {producer, consumer};
 
 	program.start();
 

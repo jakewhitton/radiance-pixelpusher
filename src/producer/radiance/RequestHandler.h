@@ -1,7 +1,7 @@
 #ifndef REQUESTHANDLER_H
 #define REQUESTHANDLER_H
 
-#include "producerconsumerprogram/FrameQueue.h"
+#include "dancefloor/FrameQueue.h"
 
 class RequestHandler
 {
