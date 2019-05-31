@@ -163,7 +163,7 @@ void RequestHandler::sendGetFrame(uint32_t delay)
 	uint32_t * delayLocation = (uint32_t *)(message.data() + radianceHeaderSize);
 	*delayLocation   = SocketUtilities::hostToLittleEndian(delay);
 
-	SocketUtilities::sendAll(_sockfd, message.data, message.size(), _terminate);
+	SocketUtilities::sendAll(_sockfd, message.data(), message.size(), _terminate);
 }
 
 void RequestHandler::getAndPushFrames()
