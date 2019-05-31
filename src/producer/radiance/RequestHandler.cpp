@@ -5,15 +5,17 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <cassert>
+#include <array>
 #include <sys/socket.h>
 #include "misc/SocketUtilities.h"
 #include "misc/Log.h"
 
-RequestHandler::RequestHandler(const int sockfd, FrameQueue & queue,
-                               const bool & shouldTerminate)
+using std::array;
+
+RequestHandler::RequestHandler(const int sockfd, FrameQueue & queue, const bool & terminate)
 	: _queue(queue)
 	, _sockfd(sockfd)
-	, _shouldTerminate(shouldTerminate)
+	, _terminate(terminate)
 {
 	fcntl(_sockfd, F_SETFL, O_NONBLOCK);
 }
@@ -46,12 +48,30 @@ void RequestHandler::operator()()
 		//
 		getAndPushFrames();
 
-		// If, at any time, one of the steps detects that _shouldTerminate is set to true,
+		// If, at any time, one of the steps detects that _terminate is set to true,
 		// control will be given back to this method so it can finish the handler.
 	}
 	catch (OperationInterruptedException e)
 	{ }
 }
+
+
+
+/*======================================== Helper functions ========================================*/
+/*
+ * Radiance messages have a specific format, which can be found at:
+ *
+ * https://github.com/zbanks/radiance/blob/master/light_output.md
+ *
+ * The format for a message is as follows:
+ *
+ * +---------------------------------------------------------------+
+ * | Length (4 bytes) | Command (1 byte) | Data (Length - 1 bytes) |
+ * +---------------------------------------------------------------+
+ *
+ * Note that length (and any other integral values longer than one byte) are assumed to
+ * be little endian unless otherwise specified, so you must convert them to host endianness.
+ */
 
 enum RadianceCommand
 {
@@ -67,22 +87,54 @@ enum RadianceCommand
 	TUV_MAP                  = 9  // Not yet supported by Radiance
 };
 
+constexpr int lengthSize = 4;
+constexpr int commandSize = 1;
+constexpr int radianceHeaderSize = lengthSize + commandSize;
+
+template <int dataSize>
+array<char, dataSize + radianceHeaderSize> getRadianceMessageSkeleton(RadianceCommand command)
+{
+	array<char, radianceHeaderSize + dataSize> message;
+
+	uint32_t * lengthLocation = (uint32_t *)message.data();
+	*lengthLocation = SocketUtilities::hostToLittleEndian(1 + dataSize);
+
+	uint8_t * commandLocation = (uint8_t *)(message.data() + 4);
+	*commandLocation = (uint8_t)command;
+
+	return message;
+}
+
+static void readRadianceMessage(const int sockfd, RadianceCommand * command, void * dataBuffer,
+                                const size_t dataBufferLength, const bool & terminate)
+{
+	// Read length from socket so we know how many bytes to read for rest of message
+	uint32_t lengthLittleEndian;
+	SocketUtilities::recvAll(sockfd, &lengthLittleEndian, sizeof lengthLittleEndian, terminate);
+	const uint32_t messageLength = SocketUtilities::littleEndianToHost(lengthLittleEndian);
+
+	// Read command from socket
+	uint8_t commandHolder;
+	SocketUtilities::recvAll(sockfd, &commandHolder, sizeof commandHolder, terminate);
+	assert(commandHolder < 10);
+	*command = static_cast<RadianceCommand>(commandHolder);
+
+	// Read data from socket
+	assert(dataBufferLength >= messageLength - 1);
+	SocketUtilities::recvAll(sockfd, dataBuffer, messageLength - 1, terminate);
+}
+/*==================================================================================================*/
+
+
+
 void RequestHandler::sendLookupCoordinates2D()
 {
-	// Packet contents:
-	//   Length: 4 bytes, MUST BE LITTLE ENDIAN
-	//   Command: 1 byte 
-	//   Data: 2 * sizeof float * DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT bytes, array of floats
-	
 	const int numberOfPixels = DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT;
+	auto message = getRadianceMessageSkeleton<2 * numberOfPixels * sizeof (float)>(LOOKUP_COORDINATES_2D);
 
-	char * message = new char[5 + numberOfPixels * 2 * sizeof(float)] {'x', 'x', 'x', 'x', LOOKUP_COORDINATES_2D};
+	float * uvCoordinates = (float *)(message.data() + radianceHeaderSize);
 
-
-	uint32_t * lengthLocation = (uint32_t *)message;
-	*lengthLocation = SocketUtilities::hostToLittleEndian(1 + numberOfPixels * 2 * sizeof(float));
-
-	float * uvCoordinates = (float *)(message + 6);
+	// TODO Refactor calculation of uv coordinates to new DanceFloor class
 
 	float widthDelta =  1 / (float) DANCE_FLOOR_WIDTH;
 	float heightDelta = 1 / (float) DANCE_FLOOR_HEIGHT;
@@ -101,43 +153,29 @@ void RequestHandler::sendLookupCoordinates2D()
 		uvCoordinates[2*i + 1] = y;
 	}
 
-	SocketUtilities::sendAll(_sockfd, message, 5 + numberOfPixels * 2 * sizeof(float), _shouldTerminate);
-
-	delete[] message;
+	SocketUtilities::sendAll(_sockfd, message.data(), message.size(), _terminate);
 }
 
 void RequestHandler::sendGetFrame(uint32_t delay)
 {
-	// Packet contents:
-	//   Length: 4 bytes, MUST BE LITTLE ENDIAN
-	//   Command: 1 byte 
-	//   Data: 4 bytes, MUST BE LITTLE ENDIAN, used to store delay in ms
+	auto message = getRadianceMessageSkeleton<sizeof (uint32_t)>(GET_FRAME);
 
-	char message[] {'x', 'x', 'x', 'x', GET_FRAME, 'x', 'x', 'x', 'x'};
+	uint32_t * delayLocation = (uint32_t *)(message.data() + radianceHeaderSize);
+	*delayLocation   = SocketUtilities::hostToLittleEndian(delay);
 
-	uint32_t * lengthLocation = (uint32_t *)message;
-
-	uint32_t * dataLocation = (uint32_t *)(message + 5);
-
-	*lengthLocation = SocketUtilities::hostToLittleEndian(sizeof message - 4);
-	*dataLocation   = SocketUtilities::hostToLittleEndian(delay);
-
-	SocketUtilities::sendAll(_sockfd, message, sizeof message, _shouldTerminate);
+	SocketUtilities::sendAll(_sockfd, message.data, message.size(), _terminate);
 }
-
-static void readRadianceMessage(const int sockfd, RadianceCommand * command, void * dataBuffer,
-                                const size_t dataBufferLength, const bool & terminate);
 
 void RequestHandler::getAndPushFrames()
 {
-	while (!_shouldTerminate)
+	while (!_terminate)
 	{
 		// TODO Refactor Frame to possibly write the radiance rgba data into a Frame buffer
 		// to improve cache locality by avoiding the copy from two distinct memory buffers
 		// that could be allocated at very different parts of the heap
 		
 		RadianceCommand command;
-		readRadianceMessage(_sockfd, &command, rgbaBuffer, sizeof rgbaBuffer, _shouldTerminate);
+		readRadianceMessage(_sockfd, &command, rgbaBuffer, sizeof rgbaBuffer, _terminate);
 		assert(command == FRAME);
 
 		Frame frame;
@@ -145,11 +183,11 @@ void RequestHandler::getAndPushFrames()
 		
 		for (int i = 0; i < DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT; ++i)
 		{
-			const int alpha = rgbaBuffer[4*i + 3];
 
-			const int r = rgbaBuffer[4*i];
-			const int g = rgbaBuffer[4*i + 1];
-			const int b = rgbaBuffer[4*i + 2];
+			const int r =     rgbaBuffer[4*i];
+			const int g =     rgbaBuffer[4*i + 1];
+			const int b =     rgbaBuffer[4*i + 2];
+			const int alpha = rgbaBuffer[4*i + 3];
 
 			const uint8_t rAlphaAdjusted = r * alpha / 255;
 			const uint8_t gAlphaAdjusted = g * alpha / 255;
@@ -163,7 +201,7 @@ void RequestHandler::getAndPushFrames()
 		bool added = _queue.add(frame, std::chrono::milliseconds(100));
 		while (!added)
 		{
-			if (_shouldTerminate)
+			if (_terminate)
 			{
 				return;
 			}
@@ -172,39 +210,3 @@ void RequestHandler::getAndPushFrames()
 		}
 	}
 }
-
-/*=================================== Helper functions ===================================*/
-static void readRadianceMessage(const int sockfd, RadianceCommand * command, void * dataBuffer,
-                                const size_t dataBufferLength, const bool & terminate)
-{
-	/*
-	 * Radiance messages have a specific format, which can be found at:
-	 *
-	 * https://github.com/zbanks/radiance/blob/master/light_output.md
-	 *
-	 * The format for a message is as follows:
-	 *
-	 * +---------------------------------------------------------------+
-	 * | Length (4 bytes) | Command (1 byte) | Data (Length - 1 bytes) |
-	 * +---------------------------------------------------------------+
-	 *
-	 * Note that length (and any other integral values longer than one byte) are assumed to
-	 * be little endian unless otherwise specified, so you must convert them to host endianness.
-	 */
-
-	// Read length from socket so we know how many bytes to read for rest of message
-	uint32_t lengthLittleEndian;
-	SocketUtilities::recvAll(sockfd, &lengthLittleEndian, sizeof lengthLittleEndian, terminate);
-	const uint32_t messageLength = SocketUtilities::littleEndianToHost(lengthLittleEndian);
-
-	// Read command from socket
-	uint8_t commandHolder;
-	SocketUtilities::recvAll(sockfd, &commandHolder, sizeof commandHolder, terminate);
-	assert(commandHolder < 10);
-	*command = static_cast<RadianceCommand>(commandHolder);
-
-	// Read data from socket
-	assert(dataBufferLength >= messageLength - 1);
-	SocketUtilities::recvAll(sockfd, dataBuffer, messageLength - 1, terminate);
-}
-/*========================================================================================*/

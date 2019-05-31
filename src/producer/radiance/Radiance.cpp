@@ -39,6 +39,9 @@ Radiance::~Radiance()
 
 void Radiance::stopRequestHandler()
 {
+	// A thread is not joinable if:
+	//  - it was default-constructed
+	//  - it was previously joined or detached
 	if (_requestHandlerThread.joinable())
 	{
 		_terminateRequestHandler = true;
@@ -57,7 +60,6 @@ void Radiance::produceFrames(FrameQueue & frameQueue)
 	 * from a DanceFloorProgram object and a reference to the boolean _terminateRequestHandler in this class).
 	 */
 
-
 	while (!_terminateServer)
 	{
 		// Accept a connection from radiance
@@ -74,6 +76,8 @@ void Radiance::produceFrames(FrameQueue & frameQueue)
 			return;
 		}
 		INFO("Radiance connected");
+
+		// TODO Implement security measure by adding client info reception to acceptConnection interface
 
 		// If an old request handler was started, terminate it
 		stopRequestHandler();

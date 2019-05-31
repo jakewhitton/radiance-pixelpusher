@@ -7,7 +7,7 @@ class RequestHandler
 {
 	FrameQueue & _queue;
 	const int _sockfd;
-	const bool & _shouldTerminate;
+	const bool & _terminate;
 
 	uint8_t rgbaBuffer[DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * sizeof (uint32_t)];
 
@@ -21,10 +21,7 @@ public:
 	RequestHandler(const RequestHandler &) = delete;
 	RequestHandler(RequestHandler &&)      = delete;
 
-	// Default constructor
-	//explicit RequestHandler();
-
-	RequestHandler(const int sockfd, FrameQueue & queue, const bool & shouldTerminate);
+	RequestHandler(const int sockfd, FrameQueue & queue, const bool & terminate);
 	~RequestHandler();
 
 	void operator()();
