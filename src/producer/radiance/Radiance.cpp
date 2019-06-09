@@ -60,10 +60,11 @@ void Radiance::produceFrames(FrameQueue & frameQueue)
 	 * from a DanceFloorProgram object and a reference to the boolean _terminateRequestHandler in this class).
 	 */
 
+	INFO("Waiting for radiance client to connect...");
+
 	while (!_terminateServer)
 	{
-		// Accept a connection from radiance
-		INFO("Waiting for radiance to connect...");
+		// Accept a connection from radiance client
 		int sockfd;
 		try
 		{
@@ -75,7 +76,8 @@ void Radiance::produceFrames(FrameQueue & frameQueue)
 			stopRequestHandler();
 			return;
 		}
-		INFO("Radiance connected");
+
+		INFO("Radiance client connected...");
 
 		// TODO Implement security measure by adding client info reception to acceptConnection interface
 
