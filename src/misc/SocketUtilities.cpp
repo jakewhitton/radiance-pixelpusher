@@ -31,7 +31,8 @@ int SocketUtilities::getSocket(const SocketType socketType, const Protocol proto
 
 	// Find available IP connection candidates for hostname
         status = getaddrinfo(location, port, &hints, &getaddrinfoResults);
-        if (status != 0) {
+        if (status != 0)
+	{
             ERR("Failed getaddrinfo: %s", gai_strerror(status));
             exit(1);
         }
@@ -50,7 +51,7 @@ int SocketUtilities::getSocket(const SocketType socketType, const Protocol proto
 		switch (socketType)
 		{
 		case SocketType::CLIENT:
-		{
+
 			// Try to connect
 			status = connect(sockfd, entry->ai_addr, entry->ai_addrlen);
 			if (status == -1)
@@ -60,9 +61,11 @@ int SocketUtilities::getSocket(const SocketType socketType, const Protocol proto
 				sockfd = -1;
 				continue;
 			}
-		}
+
+			break;
+
 		case SocketType::SERVER:
-		{
+
 			// Try to bind to port
 			status = bind(sockfd, entry->ai_addr, entry->ai_addrlen);
 			if (status == -1) 
@@ -84,7 +87,8 @@ int SocketUtilities::getSocket(const SocketType socketType, const Protocol proto
 				sockfd = -1; 
 				continue;
 			}
-		}
+
+			break;
 		}
 
 		// Socket was configured correctly
