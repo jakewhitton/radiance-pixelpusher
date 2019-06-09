@@ -118,7 +118,7 @@ int SocketUtilities::acceptConnection(const int serversockfd, const bool & termi
 	pollfd pollFileDescriptors[numberOfFileDescriptors] {{serversockfd, requestedEvent, 0}};
 
 	sockaddr connectionInfo;
-	socklen_t bytesWritten;
+	socklen_t bytesWritten = sizeof connectionInfo;
 
 	int sockfd = -1;
 
