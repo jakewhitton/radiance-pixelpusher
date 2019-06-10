@@ -9,7 +9,6 @@ using std::cin;
 
 int main()
 {
-
 	INFO("Issue an EOF (Ctrl + D) to terminate...");
 
 	const char * radiancePort = "11647";
