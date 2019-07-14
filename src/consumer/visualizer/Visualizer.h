@@ -9,21 +9,18 @@ class Visualizer
 {
 
 	SDL_Window * window;
-
 	SDL_Surface * screenSurface;
+	SDL_Renderer * screenRenderer;
+	bool _running;
+	bool _sdlInitialized;
+	void initializeSDL();
+	static constexpr int TEST_WIDTH = 12;
+	static constexpr int TEST_HEIGHT = 16;
 
-    SDL_Renderer * screenRenderer;
-
-private:
-    bool _running;
-    void fillSquare(int row, int col, uint8_t r, uint8_t g, uint8_t b);
-    bool _sdlInitialized;
-    void initializeSDL();
-    const int TEST_WIDTH = 12;
-    const int TEST_HEIGHT = 16;
+	void fillSquare(int row, int col, uint8_t r, uint8_t g, uint8_t b);
 
 public:
-    constexpr static const int SQUARE_SIZE = 60;
+constexpr static const int SQUARE_SIZE = 60;
 	Visualizer();
 	~Visualizer();
 
