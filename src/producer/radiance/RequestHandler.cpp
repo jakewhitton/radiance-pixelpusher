@@ -175,7 +175,7 @@ void RequestHandler::getAndPushFrames()
 		readRadianceMessage(_sockfd, &command, rgbaBuffer, sizeof rgbaBuffer, _terminate);
 		assert(command == FRAME);
 
-		Frame frame;
+		Frame frame = Frame::createDanceFloorFrame();
 		uint8_t * pixelPusherFrame = (uint8_t *)(frame.data() + 5);
 
 		for (int i = 0; i < ddf.numberOfPixels(); ++i)
