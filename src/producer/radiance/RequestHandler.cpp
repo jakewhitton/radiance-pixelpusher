@@ -1,5 +1,4 @@
 #include "RequestHandler.h"
-#include "config.h"
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
@@ -9,6 +8,7 @@
 #include <sys/socket.h>
 #include "misc/SocketUtilities.h"
 #include "misc/Log.h"
+#include "ddf.h"
 
 using std::array;
 
@@ -41,7 +41,7 @@ void RequestHandler::operator()()
 		//      before sending another frame unprompted.  If the delay is 0, it will wait
 		//      for the next "Get frame" message to send the next frame.
 		//
-		sendGetFrame(frameTime);
+		sendGetFrame(100);
 
 		//   3. Listen for a "Frame" messages, convert the frames into a pixel pusher
 		//      friendly format, and then push it to the queue.
@@ -110,13 +110,13 @@ static void readRadianceMessage(const int sockfd, RadianceCommand * command, voi
 {
 	// Read length from socket so we know how many bytes to read for rest of message
 	uint32_t lengthLittleEndian;
-	SocketUtilities::recvAll(sockfd, &lengthLittleEndian, sizeof lengthLittleEndian, terminate);
+	SocketUtilities::recvAll(sockfd, &lengthLittleEndian, lengthSize, terminate);
 	const uint32_t messageLength = SocketUtilities::littleEndianToHost(lengthLittleEndian);
 
 	// Read command from socket
 	uint8_t commandHolder;
 	SocketUtilities::recvAll(sockfd, &commandHolder, sizeof commandHolder, terminate);
-	assert(commandHolder < 10);
+	assert(commandHolder >= DESCRIPTION && commandHolder <= TUV_MAP);
 	*command = static_cast<RadianceCommand>(commandHolder);
 
 	// Read data from socket
@@ -129,28 +129,25 @@ static void readRadianceMessage(const int sockfd, RadianceCommand * command, voi
 
 void RequestHandler::sendLookupCoordinates2D()
 {
-	const int numberOfPixels = DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT;
+	constexpr int numberOfPixels = ddf.numberOfPixels();
 	auto message = getRadianceMessageSkeleton<2 * numberOfPixels * sizeof (float)>(LOOKUP_COORDINATES_2D);
 
 	float * uvCoordinates = (float *)(message.data() + radianceHeaderSize);
 
-	// TODO Refactor calculation of uv coordinates to new DanceFloor class
+	constexpr float widthStride =  1 / (float) ddf.width();
+	constexpr float heightStride = 1 / (float) ddf.height();
 
-	float widthDelta =  1 / (float) DANCE_FLOOR_WIDTH;
-	float heightDelta = 1 / (float) DANCE_FLOOR_HEIGHT;
+	constexpr PixelLocation pixelOrigin = ddf.getOrigin();
+	constexpr float uvOriginX = widthStride/2;
+	constexpr float uvOriginY = heightStride/2;
 
-	float topLeftX = widthDelta / 2;
-	float topLeftY = 1 - heightDelta / 2;
-
-	for (int i = 0; i < numberOfPixels; ++i)
+	for (const auto && pixel : ddf)
 	{
-		const int i_modulo_2w = i % (2*DANCE_FLOOR_WIDTH);
+		uvCoordinates[0] = uvOriginX + widthStride * (pixel.pos.x - pixelOrigin.x);
+		uvCoordinates[1] = uvOriginY + heightStride * (pixel.pos.y - pixelOrigin.y);
 
-		const float x = topLeftX + (i_modulo_2w < DANCE_FLOOR_WIDTH ? i_modulo_2w : 2*DANCE_FLOOR_WIDTH - 1 - i_modulo_2w) * widthDelta;
-		const float y = topLeftY - (i / DANCE_FLOOR_WIDTH) * heightDelta;
-
-		uvCoordinates[2*i] = x;
-		uvCoordinates[2*i + 1] = y;
+		// Advance to the next pixel
+		uvCoordinates += 2;
 	}
 
 	SocketUtilities::sendAll(_sockfd, message.data(), message.size(), _terminate);
@@ -173,15 +170,15 @@ void RequestHandler::getAndPushFrames()
 		// TODO Refactor Frame to possibly write the radiance rgba data into a Frame buffer
 		// to improve cache locality by avoiding the copy from two distinct memory buffers
 		// that could be allocated at very different parts of the heap
-		
+
 		RadianceCommand command;
 		readRadianceMessage(_sockfd, &command, rgbaBuffer, sizeof rgbaBuffer, _terminate);
 		assert(command == FRAME);
 
 		Frame frame;
 		uint8_t * pixelPusherFrame = (uint8_t *)(frame.data() + 5);
-		
-		for (int i = 0; i < DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT; ++i)
+
+		for (int i = 0; i < ddf.numberOfPixels(); ++i)
 		{
 
 			const int r =     rgbaBuffer[4*i];

@@ -22,16 +22,11 @@ void PixelPusher::consumeFrames(FrameQueue & frameQueue)
 	while (_running)
 	{
 		frameQueue.take(frame, std::chrono::milliseconds(100));
-		int bytesWritten = send(_sockfd, frame.data(), Frame::SIZE, 0);
+		int bytesWritten = send(_sockfd, frame.data(), frame.getSize(), 0);
 
 		if (bytesWritten == -1)
 		{
 			ERR("Couldn't write to socket: %s", strerror(bytesWritten));
-			exit(1);
-		}
-		else if (bytesWritten < Frame::SIZE)
-		{
-			ERR("Only wrote %d bytes / %d bytes", bytesWritten, Frame::SIZE);
 			exit(1);
 		}
 	}

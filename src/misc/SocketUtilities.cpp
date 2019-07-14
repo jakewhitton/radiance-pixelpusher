@@ -9,13 +9,14 @@
 #include <unistd.h>
 #include <assert.h>
 #include "misc/Log.h"
-#include "config.h"
 
 /*
  * All of the socket code was adapted from Beejus' guide on network programming in C, which is located at:
  *
  * http://beej.us/guide/bgnet/html/multi/
  */
+
+static const int timeout = 100; // ms
 
 int SocketUtilities::getSocket(const SocketType socketType, const Protocol protocol, const char * location, const char * port)
 {
@@ -130,7 +131,6 @@ int SocketUtilities::acceptConnection(const int serversockfd, const bool & termi
 			throw OperationInterruptedException();
 		}
 
-		const int timeout = 100; // ms
 		int status = poll(pollFileDescriptors, numberOfFileDescriptors, timeout);
 		if (status == -1)
 		{
@@ -224,7 +224,7 @@ static void repeatUntilFullyProcessed(const int sockfd, void * buffer, const voi
 		do
 		{
 			// Poll on sockfd to wait for I/O availability
-			int status = poll(pollFileDescriptors, numberOfFileDescriptors, frameTime);
+			int status = poll(pollFileDescriptors, numberOfFileDescriptors, timeout);
 			if (status == -1)
 			{
 				ERR("Failed to poll socket %d: %s", sockfd, strerror(errno));

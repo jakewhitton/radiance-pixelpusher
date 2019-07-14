@@ -1,40 +1,33 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include <array>
+#include <vector>
+#include <cstddef>
 #include <cstdint>
-#include "BlockingCollection.h"
-#include "config.h"
-
+#include "ddf.h"
 
 class Frame
 {
-
 	static uint32_t seq;
 
-	uint8_t * _data;
+	size_t _size;
+	std::vector<std::byte> _data;
+
 public:
-	constexpr static const int SIZE = 4                  // Sequence number
-	                                + 1                  // Strip index
-	                                + (DANCE_FLOOR_WIDTH
-	                                * DANCE_FLOOR_HEIGHT // Pixel data
-	                                * 3);
-	Frame();
+	Frame() = default;
+	Frame(const unsigned size);
+	Frame(const Frame & frame) = default;
+	Frame(Frame && frame)      = default;
 
-	Frame(const Frame & frame);
-	Frame(Frame && frame);
+	Frame & operator=(const Frame & frame) = default;
+	Frame & operator=(Frame && frame)      = default;
 
-	Frame & operator=(const Frame & frame);
-	Frame & operator=(Frame && frame);
+	size_t getSize();
+	void   setSize(const size_t newSize);
 
-	~Frame();
+	std::byte * data();
 
-	size_t size();
-
-	static Frame createRainbowFrame();
-	static Frame createFrame(uint8_t r, uint8_t g, uint8_t b);
-
-	const char * data();
+	static Frame createDanceFloorFrame();
 };
 
 #endif

@@ -9,7 +9,7 @@ class RequestHandler
 	const int _sockfd;
 	const bool & _terminate;
 
-	uint8_t rgbaBuffer[DANCE_FLOOR_WIDTH * DANCE_FLOOR_HEIGHT * sizeof (uint32_t)];
+	uint8_t rgbaBuffer[ddf.numberOfPixels() * sizeof (uint32_t)];
 
 	void sendLookupCoordinates2D();
 	void sendGetFrame(uint32_t delay);
