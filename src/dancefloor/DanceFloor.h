@@ -10,13 +10,63 @@ struct PixelLocation
 {
 	int x;
 	int y;
+
+	bool operator==(const PixelLocation & rhs) const
+	{
+		return x == rhs.x &&
+		       y == rhs.y;
+	}
+
+	bool operator<(const PixelLocation & rhs) const
+	{
+		return x < rhs.x;
+	}
 };
 
 struct PixelInfo
 {
 	unsigned stripNumber;
 	PixelLocation pos;
+
+	bool operator==(const PixelInfo & rhs) const
+	{
+		return stripNumber == rhs.stripNumber &&
+		       pos == rhs.pos;
+	}
+
+	bool operator<(const PixelInfo & rhs) const
+	{
+		return stripNumber < rhs.stripNumber ||
+		       pos < rhs.pos;
+	}
 };
+
+// So that the above two datatypes can be used in associative
+// containers (like std::unordered_map)
+namespace std
+{
+
+template<>
+struct hash<PixelLocation>
+{
+	size_t operator()(const PixelLocation & pixel) const
+	{
+		return hash<int>()(pixel.x) ^
+		       hash<int>()(pixel.y);
+	}
+};
+
+template<>
+struct hash<PixelInfo>
+{
+	size_t operator()(const PixelInfo & pixel) const
+	{
+		return hash<PixelLocation>()(pixel.pos) ^
+		       hash<unsigned>()(pixel.stripNumber);
+	}
+};
+
+}
 
 template <typename StripType, int numStrips>
 class DanceFloor

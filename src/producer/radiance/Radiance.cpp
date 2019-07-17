@@ -50,13 +50,13 @@ void Radiance::stopRequestHandler()
 	}
 }
 
-void Radiance::produceFrames(FrameQueue & frameQueue)
+void Radiance::produceFrames(Queue<Frame> & frameQueue)
 {
 	/*
 	 * Note that it's important that any exit path from this function closes by calling stopRequestHandler()
 	 *
 	 * If this is not done, _requestHandlerThread will continue executing and accessing memory from objects
-	 * that might be destructed at any time (specifically, it accesses a FrameQueue reference that originates
+	 * that might be destructed at any time (specifically, it accesses a Queue<Frame> reference that originates
 	 * from a DanceFloorProgram object and a reference to the boolean _terminateRequestHandler in this class).
 	 */
 

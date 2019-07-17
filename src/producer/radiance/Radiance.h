@@ -29,7 +29,7 @@ public:
 	Radiance(const char * port);
 	~Radiance();
 
-	void produceFrames(FrameQueue & frameQueue) override;
+	void produceFrames(Queue<Frame> & frameQueue) override;
 	void stop() override;
 };
 

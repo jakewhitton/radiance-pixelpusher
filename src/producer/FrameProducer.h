@@ -1,12 +1,13 @@
 #ifndef FRAMEPRODUCER_H
 #define FRAMEPRODUCER_H
 
-#include "dancefloor/FrameQueue.h"
+#include "misc/Queue.h"
+#include "dancefloor/Frame.h"
 
 class FrameProducer
 {
 public:
-	virtual void produceFrames(FrameQueue & frameQueue) = 0;
+	virtual void produceFrames(Queue<Frame> & frameQueue) = 0;
 	virtual void stop() = 0;
 };
 

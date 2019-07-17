@@ -12,7 +12,7 @@
 
 using std::array;
 
-RequestHandler::RequestHandler(const int sockfd, FrameQueue & queue, const bool & terminate)
+RequestHandler::RequestHandler(const int sockfd, Queue<Frame> & queue, const bool & terminate)
 	: _queue(queue)
 	, _sockfd(sockfd)
 	, _terminate(terminate)
@@ -195,15 +195,13 @@ void RequestHandler::getAndPushFrames()
 			pixelPusherFrame[3*i + 2] = bAlphaAdjusted;
 		}
 
-		bool added = _queue.add(frame, std::chrono::milliseconds(100));
-		while (!added)
+		try
 		{
-			if (_terminate)
-			{
-				return;
-			}
-
-			added = _queue.add(frame, std::chrono::milliseconds(100));
+			_queue.add(frame, _terminate, false); // Throw when _terminate == false
+		}
+		catch (OperationInterruptedException e)
+		{
+			break;
 		}
 	}
 }

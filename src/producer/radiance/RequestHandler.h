@@ -1,11 +1,12 @@
 #ifndef REQUESTHANDLER_H
 #define REQUESTHANDLER_H
 
-#include "dancefloor/FrameQueue.h"
+#include "misc/Queue.h"
+#include "dancefloor/Frame.h"
 
 class RequestHandler
 {
-	FrameQueue & _queue;
+	Queue<Frame> & _queue;
 	const int _sockfd;
 	const bool & _terminate;
 
@@ -21,7 +22,7 @@ public:
 	RequestHandler(const RequestHandler &) = delete;
 	RequestHandler(RequestHandler &&)      = delete;
 
-	RequestHandler(const int sockfd, FrameQueue & queue, const bool & terminate);
+	RequestHandler(const int sockfd, Queue<Frame> & queue, const bool & terminate);
 	~RequestHandler();
 
 	void operator()();

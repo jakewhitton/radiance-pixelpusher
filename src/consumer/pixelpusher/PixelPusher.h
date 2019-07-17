@@ -18,7 +18,7 @@ public:
 	PixelPusher(const char * location, const char * port);
 	~PixelPusher();
 
-	void consumeFrames(FrameQueue & frameQueue) override;
+	void consumeFrames(Queue<Frame> & frameQueue) override;
 	void stop() override;
 };
 

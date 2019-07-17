@@ -15,13 +15,21 @@ PixelPusher::~PixelPusher()
 	close(_sockfd);
 }
 
-void PixelPusher::consumeFrames(FrameQueue & frameQueue)
+void PixelPusher::consumeFrames(Queue<Frame> & frameQueue)
 {
 	Frame frame;
 
 	while (_running)
 	{
-		frameQueue.take(frame, std::chrono::milliseconds(100));
+		try
+		{
+			frameQueue.take(frame, _running, false); // Throw when _running == false
+		}
+		catch (OperationInterruptedException e)
+		{
+			break;
+		}
+
 		int bytesWritten = send(_sockfd, frame.data(), frame.getSize(), 0);
 
 		if (bytesWritten == -1)

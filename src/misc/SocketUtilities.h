@@ -1,16 +1,8 @@
 #ifndef SOCKETUTILITIES_H
 #define SOCKETUTILITIES_H
 
-#include <exception>
 #include <cstdint>
-
-class OperationInterruptedException : public std::exception
-{
-	const char * what()
-	{
-		return "A socket I/O operation was aborted";
-	}
-};
+#include "OperationInterruptedException.h"
 
 enum class SocketType
 {

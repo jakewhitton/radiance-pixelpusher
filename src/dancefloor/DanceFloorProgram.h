@@ -4,13 +4,12 @@
 #include <thread>
 #include "producer/FrameProducer.h"
 #include "consumer/FrameConsumer.h"
-#include "FrameQueue.h"
 
 using queue_t = code_machina::BlockingQueue<Frame>;
 
 class DanceFloorProgram
 {
-	FrameQueue _queue;
+	Queue<Frame> _queue;
 
 	FrameProducer & _producer;
 	std::thread _producerThread;

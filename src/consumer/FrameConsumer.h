@@ -1,12 +1,13 @@
 #ifndef FRAMECONSUMER_H
 #define FRAMECONSUMER_H
 
-#include "dancefloor/FrameQueue.h"
+#include "misc/Queue.h"
+#include "dancefloor/Frame.h"
 
 class FrameConsumer
 {
 public:
-	virtual void consumeFrames(FrameQueue & frameQueue) = 0;
+	virtual void consumeFrames(Queue<Frame> & frameQueue) = 0;
 	virtual void stop() = 0;
 };
 
