@@ -176,28 +176,39 @@ void RequestHandler::getAndPushFrames()
 		assert(command == FRAME);
 
 		Frame frame = Frame::createDanceFloorFrame();
-		uint8_t * pixelPusherFrame = (uint8_t *)(frame.data() + 5);
+		unsigned lastStripNumber = 255;
+		uint8_t * buffer = rgbaBuffer;
+		uint8_t * pixelPusherFrame = ((uint8_t *)frame.data()) + 4;
 
-		for (int i = 0; i < ddf.numberOfPixels(); ++i)
+		for (const auto && pixel : ddf)
 		{
+			if (pixel.stripNumber != lastStripNumber)
+			{
+				*pixelPusherFrame = pixel.stripNumber;
+				++pixelPusherFrame;
+				lastStripNumber = pixel.stripNumber;
+			}
 
-			const int r =     rgbaBuffer[4*i];
-			const int g =     rgbaBuffer[4*i + 1];
-			const int b =     rgbaBuffer[4*i + 2];
-			const int alpha = rgbaBuffer[4*i + 3];
+			const int r =     buffer[0];
+			const int g =     buffer[1];
+			const int b =     buffer[2];
+			const int alpha = buffer[3];
 
 			const uint8_t rAlphaAdjusted = r * alpha / 255;
 			const uint8_t gAlphaAdjusted = g * alpha / 255;
 			const uint8_t bAlphaAdjusted = b * alpha / 255;
 
-			pixelPusherFrame[3*i]     = rAlphaAdjusted;
-			pixelPusherFrame[3*i + 1] = gAlphaAdjusted;
-			pixelPusherFrame[3*i + 2] = bAlphaAdjusted;
+			pixelPusherFrame[0] = rAlphaAdjusted;
+			pixelPusherFrame[1] = gAlphaAdjusted;
+			pixelPusherFrame[2] = bAlphaAdjusted;
+
+			buffer += 4;
+			pixelPusherFrame += 3;
 		}
 
 		try
 		{
-			_queue.add(frame, _terminate, false); // Throw when _terminate == false
+			_queue.add(frame, _terminate, true); // Throw when _terminate == true
 		}
 		catch (OperationInterruptedException e)
 		{

@@ -31,6 +31,11 @@ public:
 			return *this;
 		}
 
+		size_t operator-(const const_iterator & rhs)
+		{
+			return _i - rhs._i;
+		}
+
                 constexpr PixelLocation operator*() const
 		{
 			// TODO make this code work for negative widths and heights
