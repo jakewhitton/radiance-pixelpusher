@@ -1,7 +1,7 @@
 #ifndef VISUALIZERWINDOW_H
 #define VISUALIZERWINDOW_H
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <optional>
 #include "DanceFloorUpdate.h"
 #include "misc/Queue.h"
@@ -16,19 +16,20 @@ class VisualizerWindow
 
 	SDL_Window * _window;
 	SDL_Renderer * _renderer;
-	bool _refresh;
 
 	// Spacing parameters
+	int _windowWidth, _windowHeight;
 	int _originX, _originY;
 	int _squareSize;
 
 	void createWindow();
-	void processEvents();
+	void handleEvents();
+	void setSpacingParameters();
+	void clearWindow();
+	void drawDanceFloor();
+	void drawWaitingMessage();
 	void destroyWindow();
 
-	void setSpacingParameters();
-	SDL_Rect getCellRect(int x, int y);
-	void fillCell(int x, int y, uint8_t r, uint8_t g, uint8_t b);
 public:
 	VisualizerWindow(Queue<DanceFloorUpdate> & updateQueue);
 	~VisualizerWindow();

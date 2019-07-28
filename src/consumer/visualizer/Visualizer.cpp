@@ -53,14 +53,10 @@ void Visualizer::consumeFrames(Queue<Frame> & frameQueue)
 			uint8_t g = pixelLocation[1];
 			uint8_t b = pixelLocation[2];
 
-			INFO("(%u, %u, %u)", r, g, b);
-
 			update.push_back({pixel.pos.x, pixel.pos.y, r, g, b});
 			
 			pixelLocation += 3;
 		}
-
-		//frame.print();
 
 		try
 		{

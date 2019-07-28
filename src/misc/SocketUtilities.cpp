@@ -238,6 +238,12 @@ static void repeatUntilFullyProcessed(const int sockfd, void * buffer, const voi
 				           recv(sockfd, (char *)buffer + bytesDone,  remainingBytes, 0)
 					   :
 					   send(sockfd, (char *)message + bytesDone, remainingBytes, 0);
+				if (op == RECV && newBytes == 0)
+				{
+					// Client has disconnected; operation is no longer possible
+					INFO("Detected client disconnect during recv...");
+					throw OperationInterruptedException();
+				}
 			}
 			else if (terminate)
 			{

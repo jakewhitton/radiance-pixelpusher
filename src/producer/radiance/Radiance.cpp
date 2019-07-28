@@ -34,6 +34,7 @@ Radiance::Radiance(const char * port)
 
 Radiance::~Radiance()
 {
+	INFO("Closing radiance server socket...");
 	close(_serversockfd);
 }
 
