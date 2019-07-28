@@ -1,3 +1,6 @@
 [submodule "lib/BlockingCollection"]
 	path = lib/BlockingCollection
 	url = https://github.com/CodeExMachina/BlockingCollection
+[submodule "res/fonts"]
+	path = res/fonts
+	url = https://github.com/opensourcedesign/fonts
