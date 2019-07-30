@@ -1,6 +1,9 @@
 #ifndef SNAKINGSTRIP
 #define SNAKINGSTRIP
 
+#include <cstdlib>
+#include <stdexcept>
+
 enum SnakeType
 {
 	SNAKE_VERTICAL,
@@ -10,9 +13,18 @@ enum SnakeType
 class SnakingStrip
 {
 	const PixelLocation _start;
-	const int _length;
-	const int _width;
-	const SnakeType _type;
+
+	struct Vec2D
+	{
+		int x, y;
+	};
+
+	const int _parallelDistance;
+	const int _orthogonalDistance;
+
+	const Vec2D _parallelUnitVector;
+	const Vec2D _orthogonalUnitVector;
+	
 public:
 	class const_iterator
 	{
@@ -38,28 +50,25 @@ public:
 
                 constexpr PixelLocation operator*() const
 		{
-			// TODO make this code work for negative widths and heights
+			// Normalize i to [0, 2 * _parallelDistance), as the parallel
+			// coordinate is periodic in that interval
+			const int n = _i % (2 * _strip->_parallelDistance);
+			const int parallelCoord = n < _strip->_parallelDistance ?
+			                          n
+				                      :
+						              2*_strip->_parallelDistance - 1 - n;
 			
-			const int iMod2L = _i % (2*_strip->_length);
-			const int lengthOffset = iMod2L < _strip->_length ?
-			                         iMod2L
-						 :
-						 2*_strip->_length - 1 - iMod2L;
-			
-			const int widthOffset  = _i / _strip->_length;
+			const int orthogonalCoord  = _i / _strip->_parallelDistance;
 
-			switch (_strip->_type)
-			{
-			case SNAKE_HORIZONTAL:
-				return {_strip->_start.x + lengthOffset,
-				        _strip->_start.y + widthOffset};
-			case SNAKE_VERTICAL:
-				return {_strip->_start.x + widthOffset,
-				        _strip->_start.y + lengthOffset};
-			default:
-				ERR("Unexpected value for SnakingStrip::_type");
-				exit(1);
-			}
+			const int x = _strip->_start.x +
+				          parallelCoord * _strip->_parallelUnitVector.x +
+				          orthogonalCoord * _strip->_orthogonalUnitVector.x;
+
+			const int y = _strip->_start.y +
+				          parallelCoord * _strip->_parallelUnitVector.y +
+				          orthogonalCoord * _strip->_orthogonalUnitVector.y;
+
+			return {x, y};
 		}
 
                 constexpr bool operator!=(const const_iterator & rhs) const
@@ -69,21 +78,24 @@ public:
 		}
 	};
 
-	// length - the distance from the start to the first point where the snake changes direction
-	// width - the horizontal distance the snake must make before reaching the end
-	//
-	// e.g.
-	//
-	// ->->->->|
-	// <-<-<-<-|
-	//
-	// length = 9
-	// width = 2
-	constexpr SnakingStrip(const PixelLocation start, const int length, const int width, const SnakeType type)
+	constexpr SnakingStrip(const PixelLocation start, const int deltaX, const int deltaY, const SnakeType type)
 		: _start(start)
-		, _length(length)
-		, _width(width)
-		, _type(type)
+		, _parallelDistance    (type == SNAKE_HORIZONTAL ?
+							    abs(deltaX)
+								:
+								abs(deltaY))
+		, _orthogonalDistance  (type == SNAKE_HORIZONTAL ?
+								abs(deltaY)
+								:
+								abs(deltaX))		  
+		, _parallelUnitVector  (type == SNAKE_HORIZONTAL ?
+		                        Vec2D {deltaX / _parallelDistance, 0}
+								:
+		                        Vec2D {0, deltaY / _parallelDistance})
+		, _orthogonalUnitVector(type == SNAKE_HORIZONTAL ?
+		                        Vec2D {0, deltaY / _orthogonalDistance}
+		                        :
+	                            Vec2D {deltaX / _orthogonalDistance})
 	{ }
 
 	constexpr const_iterator begin() const
@@ -93,7 +105,7 @@ public:
 
 	constexpr const_iterator end() const
 	{
-		return {this, _length * _width};
+		return {this, _parallelDistance * _orthogonalDistance};
 	}
 };
 

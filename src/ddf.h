@@ -12,12 +12,12 @@ static constexpr int numStrips = 6;
 constexpr DanceFloor<SnakingStrip, numStrips> ddf
 {{{
 	// <start pos>  <width>  <height>  <snaking style>    <position in room>
-	{{12,  0},      12,      16,       SNAKE_HORIZONTAL}, // Window right
-	{{12, 16},      12,      16,       SNAKE_HORIZONTAL}, // Middle right
-	{{12, 32},      12,      16,       SNAKE_HORIZONTAL}, // Near right
-	{{ 0,  0},      12,      16,       SNAKE_HORIZONTAL}, // Window left
-	{{ 0, 16},      12,      16,       SNAKE_HORIZONTAL}, // Middle left
-	{{ 0, 32},      12,      16,       SNAKE_HORIZONTAL}  // Near left
+	{{24, 48},      -12,     -16,      SNAKE_HORIZONTAL}, // Window right
+	{{24, 32},      -12,     -16,      SNAKE_HORIZONTAL}, // Middle right
+	{{24,  1},      -12,      16,      SNAKE_HORIZONTAL}, // Near right
+	{{ 1, 48},       12,     -16,      SNAKE_HORIZONTAL}, // Window left
+	{{ 1, 32},       12,     -16,      SNAKE_HORIZONTAL}, // Middle left
+	{{ 1, 16},       12,     -16,      SNAKE_HORIZONTAL}  // Near left
 }}};
 
 #endif
