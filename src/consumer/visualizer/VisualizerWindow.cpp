@@ -139,7 +139,7 @@ void VisualizerWindow::drawDanceFloor()
 		const int width  = _squareSize;
 		const int height = -_squareSize;
 		
-		SDL_Rect cellRect {xPos, yPos, width, height};
+		SDL_Rect cellRect {xPos, yPos, width, -height};
 
 		SDL_SetRenderDrawColor(_renderer, update.r, update.g, update.b, SDL_ALPHA_OPAQUE);
 		SDL_RenderFillRect(_renderer, &cellRect);
