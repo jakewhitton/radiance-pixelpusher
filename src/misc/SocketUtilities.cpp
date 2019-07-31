@@ -24,19 +24,25 @@ int SocketUtilities::getSocket(const SocketType socketType, const Protocol proto
 
 	// Initialize hints
 	addrinfo hints;
-        memset(&hints, 0, sizeof hints);
-        hints.ai_family = AF_UNSPEC; // No preference between IPv4 and IPv6
-        hints.ai_socktype = (protocol == Protocol::TCP) ? SOCK_STREAM : SOCK_DGRAM;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC; // No preference between IPv4 and IPv6
+    hints.ai_socktype = (protocol == Protocol::TCP) ? SOCK_STREAM : SOCK_DGRAM;
 
+	if (socketType == SocketType::SERVER)
+	{
+		hints.ai_flags = AI_PASSIVE;
+		location = nullptr;
+	}
+	
 	addrinfo * getaddrinfoResults;
 
 	// Find available IP connection candidates for hostname
-        status = getaddrinfo(location, port, &hints, &getaddrinfoResults);
-        if (status != 0)
+    status = getaddrinfo(location, port, &hints, &getaddrinfoResults);
+    if (status != 0)
 	{
-            ERR("Failed getaddrinfo: %s", gai_strerror(status));
-            exit(1);
-        }
+        ERR("Failed getaddrinfo: %s", gai_strerror(status));
+        exit(1);
+    }
 
 	// Obtain socket file descriptor that is connected to the pixel pusher
 	int sockfd = -1;
