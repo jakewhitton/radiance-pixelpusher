@@ -4,13 +4,9 @@
 #include <vector>
 #include <cstddef>
 #include <cstdint>
-#include "ddf.h"
 
 class Frame
 {
-	static uint32_t seq;
-
-	size_t _size;
 	std::vector<std::byte> _data;
 
 public:
@@ -22,10 +18,8 @@ public:
 	Frame & operator=(const Frame & frame) = default;
 	Frame & operator=(Frame && frame)      = default;
 
-	size_t getSize();
-	void   setSize(const size_t newSize);
-
 	std::byte * data();
+	size_t getSize();
 
 	static Frame createDanceFloorFrame();
 };

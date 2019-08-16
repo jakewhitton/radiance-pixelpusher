@@ -68,7 +68,7 @@ public:
 				          parallelCoord * _strip->_parallelUnitVector.y +
 				          orthogonalCoord * _strip->_orthogonalUnitVector.y;
 
-			return {x, y};
+			return {x, y, _i};
 		}
 
                 constexpr bool operator!=(const const_iterator & rhs) const

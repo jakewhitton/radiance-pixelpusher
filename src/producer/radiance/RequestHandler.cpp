@@ -129,25 +129,25 @@ static void readRadianceMessage(const int sockfd, RadianceCommand * command, voi
 
 void RequestHandler::sendLookupCoordinates2D()
 {
-	constexpr int numberOfPixels = ddf.numberOfPixels();
-	auto message = getRadianceMessageSkeleton<2 * numberOfPixels * sizeof (float)>(LOOKUP_COORDINATES_2D);
+	constexpr int width = ddf.width();
+	constexpr int height = ddf.height();
+	auto message = getRadianceMessageSkeleton<2 * width * height * sizeof (float)>(LOOKUP_COORDINATES_2D);
 
-	float * uvCoordinates = (float *)(message.data() + radianceHeaderSize);
+	auto uvCoordinates = (float (*)[height][2])(message.data() + radianceHeaderSize);
 
 	constexpr float widthStride =  1 / (float) ddf.width();
 	constexpr float heightStride = 1 / (float) ddf.height();
 
-	constexpr PixelLocation pixelOrigin = ddf.getOrigin();
 	constexpr float uvOriginX = widthStride/2;
 	constexpr float uvOriginY = heightStride/2;
 
-	for (const auto && pixel : ddf)
+	for (int x = 0; x < width; ++x)
 	{
-		uvCoordinates[0] = uvOriginX + widthStride * (pixel.pos.x - pixelOrigin.x);
-		uvCoordinates[1] = uvOriginY + heightStride * (pixel.pos.y - pixelOrigin.y);
-
-		// Advance to the next pixel
-		uvCoordinates += 2;
+		for (int y = 0; y < height; ++y)
+		{
+			uvCoordinates[x][y][0] = uvOriginX + widthStride  * x;
+			uvCoordinates[x][y][1] = uvOriginY + heightStride * y;
+		}
 	}
 
 	SocketUtilities::sendAll(_sockfd, message.data(), message.size(), _terminate);
@@ -172,38 +172,32 @@ void RequestHandler::getAndPushFrames()
 		// that could be allocated at very different parts of the heap
 
 		RadianceCommand command;
-		readRadianceMessage(_sockfd, &command, rgbaBuffer, sizeof rgbaBuffer, _terminate);
+		readRadianceMessage(_sockfd, &command, _rgbaBuffer, sizeof _rgbaBuffer, _terminate);
 		assert(command == FRAME);
 
+		constexpr int width  = ddf.width();
+		constexpr int height = ddf.height();
+
 		Frame frame = Frame::createDanceFloorFrame();
-		unsigned lastStripNumber = 255;
-		uint8_t * buffer = rgbaBuffer;
-		uint8_t * pixelPusherFrame = ((uint8_t *)frame.data()) + 4;
+		auto pixelPusherFrame = (uint8_t (*)[height][3])frame.data();
 
-		for (const auto && pixel : ddf)
+		for (int x = 0; x < width; ++x)
 		{
-			if (pixel.stripNumber != lastStripNumber)
+			for (int y = 0; y < height; ++y)
 			{
-				*pixelPusherFrame = pixel.stripNumber;
-				++pixelPusherFrame;
-				lastStripNumber = pixel.stripNumber;
+				const int r =     _rgbaBuffer[x][y][0];
+				const int g =     _rgbaBuffer[x][y][1];
+				const int b =     _rgbaBuffer[x][y][2];
+				const int alpha = _rgbaBuffer[x][y][3];
+
+				const uint8_t rAlphaAdjusted = r * alpha / 255;
+				const uint8_t gAlphaAdjusted = g * alpha / 255;
+				const uint8_t bAlphaAdjusted = b * alpha / 255;
+
+				pixelPusherFrame[x][y][0] = rAlphaAdjusted;
+				pixelPusherFrame[x][y][1] = gAlphaAdjusted;
+				pixelPusherFrame[x][y][2] = bAlphaAdjusted;
 			}
-
-			const int r =     buffer[0];
-			const int g =     buffer[1];
-			const int b =     buffer[2];
-			const int alpha = buffer[3];
-
-			const uint8_t rAlphaAdjusted = r * alpha / 255;
-			const uint8_t gAlphaAdjusted = g * alpha / 255;
-			const uint8_t bAlphaAdjusted = b * alpha / 255;
-
-			pixelPusherFrame[0] = rAlphaAdjusted;
-			pixelPusherFrame[1] = gAlphaAdjusted;
-			pixelPusherFrame[2] = bAlphaAdjusted;
-
-			buffer += 4;
-			pixelPusherFrame += 3;
 		}
 
 		try

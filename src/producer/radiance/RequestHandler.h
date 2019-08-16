@@ -3,6 +3,7 @@
 
 #include "misc/Queue.h"
 #include "dancefloor/Frame.h"
+#include "ddf.h"
 
 class RequestHandler
 {
@@ -10,7 +11,7 @@ class RequestHandler
 	const int _sockfd;
 	const bool & _terminate;
 
-	uint8_t rgbaBuffer[ddf.numberOfPixels() * sizeof (uint32_t)];
+	uint8_t _rgbaBuffer[ddf.width()][ddf.height()][4];
 
 	void sendLookupCoordinates2D();
 	void sendGetFrame(uint32_t delay);

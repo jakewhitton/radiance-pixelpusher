@@ -137,7 +137,7 @@ void VisualizerWindow::drawDanceFloor()
 		const int xPos   = _originX + _squareSize * update.x;
 		const int yPos   = _originY - _squareSize * update.y;
 		const int width  = _squareSize;
-		const int height = -_squareSize;
+		const int height = _squareSize;
 		
 		SDL_Rect cellRect {xPos, yPos, width, -height};
 

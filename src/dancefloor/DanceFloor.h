@@ -10,6 +10,7 @@ struct PixelLocation
 {
 	int x;
 	int y;
+	int i; // Position along strip
 
 	bool operator==(const PixelLocation & rhs) const
 	{

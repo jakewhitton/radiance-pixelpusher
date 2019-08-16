@@ -35,27 +35,22 @@ void Visualizer::consumeFrames(Queue<Frame> & frameQueue)
 			break;
 		}
 
-		// TODO Rewrite this abomination into something clearer
+		constexpr int width  = ddf.width();
+		constexpr int height = ddf.height();
 
-		unsigned lastStripNumber = 255;
-		const uint8_t * pixelLocation = (const uint8_t *)(frame.data() + 4);
-		vector<PixelUpdate> update(ddf.numberOfPixels());
+		auto pixelLocation = (const uint8_t (*)[height][3])frame.data();
+		DanceFloorUpdate update(ddf.numberOfPixels());
 
-		for (const auto && pixel : ddf)
+		for (int x = 0; x < width; ++x)
 		{
-			if (pixel.stripNumber != lastStripNumber)
+			for (int y = 0; y < height; ++y)
 			{
-				++pixelLocation;
-				lastStripNumber = pixel.stripNumber;
-			}
-			
-			uint8_t r = pixelLocation[0];
-			uint8_t g = pixelLocation[1];
-			uint8_t b = pixelLocation[2];
+				uint8_t r = pixelLocation[x][y][0];
+				uint8_t g = pixelLocation[x][y][1];
+				uint8_t b = pixelLocation[x][y][2];
 
-			update.push_back({pixel.pos.x, pixel.pos.y, r, g, b});
-			
-			pixelLocation += 3;
+				update.push_back({x, y, r, g, b});
+   			}
 		}
 
 		try
