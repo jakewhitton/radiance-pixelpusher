@@ -24,7 +24,7 @@ public:
 		return _queue.empty();
 	}
 
-	void add(Element & e, const bool & condition, const bool trigger = true)
+	void add(Element e, const bool & condition, const bool trigger)
 	{
 		Status status;
 		do
@@ -34,19 +34,19 @@ public:
 				throw OperationInterruptedException();
 			}
 
-			status = _queue.try_add_timed(e, defaultTimeout);
+			status = _queue.try_add_timed(std::move(e), defaultTimeout);
 		}
 		while (status != Status::Ok);
 	}
 
-	bool add(Element & e, unsigned timeoutMs)
+	bool add(Element e, unsigned timeoutMs)
 	{
-		Status status = _queue.try_add_timed(e, milliseconds(timeoutMs));
+		Status status = _queue.try_add_timed(std::move(e), milliseconds(timeoutMs));
 		
 		return status == Status::Ok;
 	}
 
-	void take(Element & e, const bool & condition, const bool trigger = true)
+	void take(Element & e, const bool & condition, const bool trigger)
 	{
 		Status status;
 

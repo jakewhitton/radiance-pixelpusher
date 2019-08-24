@@ -55,8 +55,8 @@ public:
 			const int n = _i % (2 * _strip->_parallelDistance);
 			const int parallelCoord = n < _strip->_parallelDistance ?
 			                          n
-				                      :
-						              2*_strip->_parallelDistance - 1 - n;
+				                  :
+					          2*_strip->_parallelDistance - 1 - n;
 			
 			const int orthogonalCoord  = _i / _strip->_parallelDistance;
 
