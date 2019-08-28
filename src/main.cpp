@@ -17,7 +17,7 @@ int main()
 	
 	Tetris producer;
 	
-	//const char * pixelPusherLocation = "192.168.0.5";
+	//const char * pixelPusherLocation = "192.168.0.177";
 	//const char * pixelPusherPort = "9897";
 	//PixelPusher consumer {pixelPusherLocation, pixelPusherPort};
 	

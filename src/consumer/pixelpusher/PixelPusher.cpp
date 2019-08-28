@@ -12,22 +12,6 @@ PixelPusher::PixelPusher(const char * location, const char * port)
 	// Set sequence value in message buffer to 0
 	auto sequenceLocation = (uint32_t *)_messageBuffer;
 	*sequenceLocation = 0;
-
-	// Write strip indices into message buffer (which won't change) and
-	// populate data structure with the location of the actual color data
-	// for each strip (which also won't change).
-	//
-	// Note: this code assumes each strip has the same number of pixels
-	constexpr int stripSize = ddf.numberOfPixels() / ddf.numberOfStrips();
-	for (int i = 0; i < ddf.numberOfStrips(); ++i)
-	{
-		auto stripIndexLocation = (uint8_t *)(_messageBuffer +
-		                                      sequenceSize +
-		                                      i * (stripSize + 1));
-		*stripIndexLocation = i;
-
-		_stripLocations[i] = (uint8_t (*)[3])(stripIndexLocation + 1); // Color data starts after index
-	}
 }
 
 PixelPusher::~PixelPusher()
@@ -35,17 +19,36 @@ PixelPusher::~PixelPusher()
 	close(_sockfd);
 }
 
-void PixelPusher::writeFrameDataToMessageBuffer(Frame & frame)
+void PixelPusher::writeFrameDataToMessageBuffer(Frame & frame, int lowStrip, int highStrip)
 {
 	auto frameData = (uint8_t (*)[ddf.height()][3])frame.data();
-	for (const auto && pixelInfo : ddf)
-	{
-		auto strip = _stripLocations[pixelInfo.stripNumber];
 
-		const PixelLocation & pos = pixelInfo.pos;
-		strip[pos.i][0] = frameData[pos.x][pos.y][0];
-		strip[pos.i][1] = frameData[pos.x][pos.y][1];
-		strip[pos.i][2] = frameData[pos.x][pos.y][2];
+	const PixelLocation origin = ddf.getOrigin();
+
+	for (int strip = 0; strip <= highStrip - lowStrip; ++strip)
+	{
+		auto itr = ddf.begin() + (lowStrip + strip) * pixelsInStrip;
+		auto end = highStrip == 5 ?
+		           ddf.end()
+			   :
+			   (itr + pixelsInStrip);
+
+		uint8_t * stripIndex = _messageBuffer + sequenceSize + strip * pixelsInStrip;
+		*stripIndex = lowStrip + strip;
+
+		auto stripData = (uint8_t (*)[3])(stripIndex + 1);
+
+		for (; itr != end; ++itr)
+		{
+			const PixelInfo info = *itr;
+
+			const int x = info.pos.x - origin.x;
+			const int y = info.pos.y - origin.y;
+
+			stripData[info.pos.i][0] = frameData[x][y][0];
+			stripData[info.pos.i][1] = frameData[x][y][1];
+			stripData[info.pos.i][2] = frameData[x][y][2];
+		}
 	}
 }
 
@@ -64,14 +67,23 @@ void PixelPusher::consumeFrames(Queue<Frame> & frameQueue)
 			break;
 		}
 
-		writeFrameDataToMessageBuffer(frame);
-
-		int bytesWritten = send(_sockfd, _messageBuffer, sizeof _messageBuffer, 0);
-
-		if (bytesWritten == -1)
+		for (int strip = 0; strip < ddf.numberOfStrips(); strip += stripsInPacket)
 		{
-			ERR("Couldn't write to socket: %s", strerror(bytesWritten));
-			exit(1);
+			//INFO("\n\n\nWriting strips %d - %d\n\n\n", strip, strip + stripsInPacket);
+			writeFrameDataToMessageBuffer(frame, strip, std::min(strip + stripsInPacket, ddf.numberOfStrips()) - 1);
+
+			int bytesWritten = send(_sockfd, _messageBuffer, sizeof _messageBuffer, 0);
+
+			if (bytesWritten == -1)
+			{
+				ERR("Couldn't write to socket: %s", strerror(bytesWritten));
+				exit(1);
+			}
+
+			INFO("%d bytes written", bytesWritten);
+
+			const unsigned timeout = 1; // ms
+			usleep(timeout * 1000);
 		}
 
 		// Increment sequence in message buffer
