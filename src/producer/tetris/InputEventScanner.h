@@ -4,6 +4,8 @@
 #include "misc/Queue.h"
 #include "Types.h"
 #include <thread>
+#include "wiiuse.h"
+#include <stdio.h>
 
 enum InputEventType
 {
