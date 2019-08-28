@@ -36,8 +36,31 @@ void InputEventScanner::stop()
 
 bool InputEventScanner::inputDevicesConnected()
 {
-	// TODO: return whether the controllers are connected so that
-	// the game doesn't start until the input devices are available
+	wiimote** wiimotes; int found, connected;
+	wiimotes = wiiuse_init(2);
+
+	while (1) {
+		printf("[WII-INFO] Searching for wiimotes, enter discovery now\n");
+		found = wiiuse_find(wiimotes, 2, 10);
+		if (found != 2) {
+			printf("[WII-ERR] Found %i wiimotes out of 2 expected...\n", found);
+			wiiuse_cleanup(wiimotes, 2); continue; }
+
+		connected = wiiuse_connect(wiimotes, 2);
+		if (connected = 2) {
+			printf("[WII-INFO] Connected to all wiimotes!\n"); break; }
+		else {
+			printf("[WII-ERR] Failed to connect\n"); wiiuse_cleanup(wiimotes, 2);
+			continue; }}
+	
+	wiiuse_set_leds(wiimotes[0], WIIMOTE_LED_1);
+	wiiuse_set_leds(wiimotes[1], WIIMOTE_LED_4);
+	wiiuse_rumble(wiimotes[0], 1);
+	wiiuse_rumble(wiimotes[1], 1);
+	usleep(200000);
+	wiiuse_rumble(wiimotes[0], 0);
+	wiiuse_rumble(wiimotes[1], 0);
+
 	return true;
 }
 
