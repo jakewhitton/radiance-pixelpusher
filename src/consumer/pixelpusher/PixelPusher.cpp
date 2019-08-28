@@ -82,7 +82,7 @@ void PixelPusher::consumeFrames(Queue<Frame> & frameQueue)
 
 			INFO("%d bytes written", bytesWritten);
 
-			const unsigned timeout = 1; // ms
+			const unsigned timeout = 2; // ms
 			usleep(timeout * 1000);
 		}
 
