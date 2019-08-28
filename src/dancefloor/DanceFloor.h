@@ -139,6 +139,18 @@ public:
 			, _stripIterator(stripIterator)
 		{ }
 
+		constexpr const_iterator operator+(int x)
+		{
+			const_iterator copy = *this;
+
+			for (int i = 0; i < x; ++i)
+			{
+				++copy;
+			}
+
+			return copy;
+		}
+
 		constexpr const_iterator operator++()
 		{
 			++_stripIterator;

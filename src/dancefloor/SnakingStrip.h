@@ -36,10 +36,14 @@ public:
 			, _i(i)
 		{ }
 
+		constexpr const_iterator operator+(int x)
+		{
+			return {_strip, _i + x};
+		}
+
 		constexpr const_iterator operator++()
 		{
 			++_i;
-
 			return *this;
 		}
 
