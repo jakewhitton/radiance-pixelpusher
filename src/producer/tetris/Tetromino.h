@@ -2,6 +2,7 @@
 #define TETROMINO_H
 
 #include "Types.h"
+#include <stdlib.h>
 
 class Tetromino
 {

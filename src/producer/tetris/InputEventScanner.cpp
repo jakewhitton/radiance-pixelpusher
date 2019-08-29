@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 using std::thread;
+wiimote** wiimotes;
 
 InputEventScanner::InputEventScanner(Queue<InputEvent> & eventQueue)
 	: _eventQueue(eventQueue)
@@ -36,22 +37,21 @@ void InputEventScanner::stop()
 
 bool InputEventScanner::inputDevicesConnected()
 {
-	wiimote** wiimotes; int found, connected;
-	wiimotes = wiiuse_init(2);
+	int found, connected;
+	wiimotes = wiiuse_init(1);
 
 	while (1) {
 		printf("[WII-INFO] Searching for wiimotes, enter discovery now\n");
-		found = wiiuse_find(wiimotes, 2, 10);
-		if (found != 2) {
-			printf("[WII-ERR] Found %i wiimotes out of 2 expected...\n", found);
-			wiiuse_cleanup(wiimotes, 2); continue; }
+		found = wiiuse_find(wiimotes, 1, 5);
+		if (!found) {
+			printf("[WII-ERR] Found %i wiimotes out of 1 expected...\n", found);
+			exit(1); }
 
-		connected = wiiuse_connect(wiimotes, 2);
-		if (connected = 2) {
+		connected = wiiuse_connect(wiimotes, 1);
+		if (connected == 1) {
 			printf("[WII-INFO] Connected to all wiimotes!\n"); break; }
 		else {
-			printf("[WII-ERR] Failed to connect\n"); wiiuse_cleanup(wiimotes, 2);
-			continue; }}
+			printf("[WII-ERR] Failed to connect\n"); exit(1); }}
 	
 	wiiuse_set_leds(wiimotes[0], WIIMOTE_LED_1);
 	wiiuse_set_leds(wiimotes[1], WIIMOTE_LED_4);
@@ -66,10 +66,32 @@ bool InputEventScanner::inputDevicesConnected()
 
 void InputEventScanner::detectEvents()
 {
-	while (_running)
-	{
-		// TODO: Poll for events
-		constexpr unsigned ms = 20;
-		usleep(ms * 1000);
-	}
+	while (_running) {
+		if (wiiuse_poll(wiimotes, 1)) {
+			switch (wiimotes[0]->event) {
+				case WIIUSE_EVENT:
+					if (IS_PRESSED(wiimotes[0], WIIMOTE_BUTTON_B)) {
+						InputEvent inputEvent;
+						inputEvent.type = ROTATE;
+						inputEvent.data.rotationDirection = CLOCKWISE;
+						_eventQueue.add(inputEvent, 10); } 
+					if (IS_PRESSED(wiimotes[0], WIIMOTE_BUTTON_LEFT)) {
+						InputEvent inputEvent;
+						inputEvent.type = TRANSLATE;
+						inputEvent.data.translationDirection = LEFT;
+						_eventQueue.add(inputEvent, 10); } 
+					if (IS_PRESSED(wiimotes[0], WIIMOTE_BUTTON_DOWN)) {
+						InputEvent inputEvent;
+						inputEvent.type = TRANSLATE;
+						inputEvent.data.translationDirection = DOWN;
+						_eventQueue.add(inputEvent, 10); } 
+					if (IS_PRESSED(wiimotes[0], WIIMOTE_BUTTON_RIGHT)) {
+						InputEvent inputEvent;
+						inputEvent.type = TRANSLATE;
+						inputEvent.data.translationDirection = RIGHT;
+						_eventQueue.add(inputEvent, 10); }
+					if (IS_PRESSED(wiimotes[0], WIIMOTE_BUTTON_ONE)) {
+						exit(1); } break; }}}
+
+
 }

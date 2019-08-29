@@ -20,9 +20,9 @@ Tetris::Tetris()
 
 void Tetris::produceFrames(Queue<Frame> & frameQueue)
 {
+	waitForInputDevicesToConnect();
 	_inputEventScanner.start();
 
-	waitForInputDevicesToConnect();
 
 	_frameQueue = &frameQueue;
 

@@ -164,5 +164,13 @@ const_iterator Tetromino::end() const
 
 Tetromino Tetromino::generateRandomTetromino()
 {
-	return Tetromino(S);
+	int r = rand() % 7;
+	switch (r) {
+		case 0: return Tetromino(I); break;
+		case 1: return Tetromino(O); break;
+		case 2: return Tetromino(T); break;
+		case 3: return Tetromino(S); break;
+		case 4: return Tetromino(Z); break;
+		case 5: return Tetromino(J); break;
+		default: return Tetromino(L); break; }
 }
