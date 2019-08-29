@@ -14,7 +14,9 @@ Tetris::Tetris()
 	, _frame(Frame::createDanceFloorFrame())
 	, _frameData((uint8_t (*)[ddf.height()][3])_frame.data())
 	, _frameQueue(nullptr)
-{ }
+{
+	renderStaticElements();
+}
 
 void Tetris::produceFrames(Queue<Frame> & frameQueue)
 {
@@ -122,7 +124,7 @@ void Tetris::translateFallingTetromino(TranslationDirection direction)
 	}
 	else if (direction == DOWN)
 	{
-		_playField.commitTetromino(_fallingTetromino);
+		_score += _playField.commitTetromino(_fallingTetromino);
 		_fallingTetromino = _nextTetromino;
 		_nextTetromino = Tetromino::generateRandomTetromino();
 
@@ -201,6 +203,30 @@ void Tetris::fillPlayFieldCell(const Cell & cell)
 			}
 		}
 	}
+}
+
+void Tetris::renderRectangle(CellPosition p1, CellPosition p2, uint8_t r, uint8_t g, uint8_t b)
+{
+	for (int x = p1.x; x <= p2.x; ++x)
+	{
+		for (int y = p1.y; y <= p2.y; ++y)
+		{
+			_frameData[x][y][0] = r;
+			_frameData[x][y][1] = g;
+			_frameData[x][y][2] = b;
+		}
+	}
+}
+
+void Tetris::renderStaticElements()
+{
+	const uint8_t greyR = 200;
+	const uint8_t greyG = 200;
+	const uint8_t greyB = 200;
+
+	renderRectangle({0, 0}, {3, 39}, greyR, greyG, greyB);
+
+	renderRectangle({4, 40}, {23, 47}, greyR, greyG, greyB);
 }
 
 void Tetris::renderBoard()

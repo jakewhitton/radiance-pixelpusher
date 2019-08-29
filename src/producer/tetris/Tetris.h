@@ -33,6 +33,7 @@ class Tetris
 	Tetromino _nextTetromino;
 
 	// Game logic
+	unsigned _score = 0;
 	void tick();
 	void translateFallingTetromino(TranslationDirection direction);
 	void rotateFallingTetromino(RotationDirection direction);
@@ -43,6 +44,8 @@ class Tetris
 	Queue<Frame> * _frameQueue;
 	void render();
 	void fillPlayFieldCell(const Cell & cell);
+	void renderRectangle(CellPosition p1, CellPosition p2, uint8_t r, uint8_t g, uint8_t b);
+	void renderStaticElements();
 	void renderBoard();
 	void renderFallingTetromino();
 	void renderNextTetromino();
