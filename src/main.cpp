@@ -17,11 +17,11 @@ int main()
 	
 	Tetris producer;
 	
-	//const char * pixelPusherLocation = "192.168.0.177";
-	//const char * pixelPusherPort = "9897";
-	//PixelPusher consumer {pixelPusherLocation, pixelPusherPort};
+	const char * pixelPusherLocation = "192.168.0.177";
+	const char * pixelPusherPort = "9897";
+	PixelPusher consumer {pixelPusherLocation, pixelPusherPort};
 	
-	Visualizer consumer;
+	//Visualizer consumer;
 
 	DanceFloorProgram program {producer, consumer};
 

@@ -57,7 +57,7 @@ bool InputEventScanner::inputDevicesConnected()
 	wiiuse_set_leds(wiimotes[1], WIIMOTE_LED_4);
 	wiiuse_rumble(wiimotes[0], 1);
 	wiiuse_rumble(wiimotes[1], 1);
-	usleep(200000);
+	usleep(2000000);
 	wiiuse_rumble(wiimotes[0], 0);
 	wiiuse_rumble(wiimotes[1], 0);
 

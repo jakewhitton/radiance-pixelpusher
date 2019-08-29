@@ -3,6 +3,7 @@
 
 #include "Types.h"
 #include <stdlib.h>
+#include <time.h>
 
 class Tetromino
 {

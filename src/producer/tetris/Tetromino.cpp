@@ -164,6 +164,8 @@ const_iterator Tetromino::end() const
 
 Tetromino Tetromino::generateRandomTetromino()
 {
+	
+	srand(time(NULL));
 	int r = rand() % 7;
 	switch (r) {
 		case 0: return Tetromino(I); break;
