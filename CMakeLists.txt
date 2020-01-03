@@ -15,7 +15,8 @@ add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
+string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 add_executable(run.exe ${SOURCES})
-target_link_libraries(run.exe ${SDL2_LIBRARIES} SDL2_ttf wiiuse)
+target_link_libraries(run.exe ${SDL2_LIBRARIES} SDL2_ttf)
 
 set_property(TARGET run.exe PROPERTY CXX_STANDARD 17)
