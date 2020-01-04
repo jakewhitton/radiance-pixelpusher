@@ -1,0 +1,62 @@
+FROM ubuntu:16.04
+
+# Radiance containerization
+RUN mkdir radiance-pixelpusher
+WORKDIR /radiance-pixelpusher/
+COPY . .
+
+# Refresh package lists and grab repository tools
+# left out libsdl2-dev libsdl2-ttf-dev
+RUN \
+apt-get update \
+&& apt-get install --no-install-recommends software-properties-common -y \
+#
+# Add newer toolchain
+&& apt-add-repository ppa:ubuntu-toolchain-r/test -y \
+&& apt-get update \
+#
+# Install GCC/G++-9 as default C compiler
+&& apt install --no-install-recommends gcc-9 g++-9 -y \
+&& update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 30 \
+&& update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 30 \
+#
+# Grab cmake thru pip
+# This could be optimized but it's a quick and dirty solution for debug versions
+&& apt-get install --no-install-recommends python-pip -y \
+&& pip install --no-cache-dir --upgrade cmake \
+&& export PATH="/usr/local/lib/python2.7/dist-packages:$PATH" \
+#
+#
+# Grab /opt/qt59/
+&& apt-add-repository ppa:beineri/opt-qt591-xenial -y \
+&& apt-get update \
+
+&& apt-get install -y qt59base qt59graphicaleffects qt59multimedia qt59quickcontrols qt59imageformats qt59quickcontrols2 qt59script \
+#
+# Further deps
+# Note the mesa utils: may need different options for nvidia-enabled machines
+# LKJ does not use nvidia drivers yet so this is fine for now
+&& apt-get install --no-install-recommends libfftw3-dev libsamplerate0-dev libgl1-mesa-dri libasound2-dev libmpv-dev libdrm-dev libgl1-mesa-dev mesa-utils portaudio19-dev -y \
+#
+# Radiance build task
+&& cd radiance \
+&& mkdir build \
+&& cd build \
+&& cmake .. -DCMAKE_PREFIX_PATH=/opt/qt59 \
+&& make -j4 \
+#
+# Cleanup
+&& apt purge software-properties-common -y \
+&& pip freeze | xargs pip uninstall -y \
+&& apt purge python-pip -y \
+&& apt autoremove -y \
+&& apt clean \
+&& rm -rvf /var/lib/apt/lists/* \
+&& cd /radiance-pixelpusher/ \
+&& rm -rvf src CMakeLists.txt .git* lib res Dockerfile* README.md \
+&& cd radiance \
+&& rm -rvf src CMakeLists.txt .git* README.md
+
+WORKDIR /radiance-pixelpusher/radiance/build/
+CMD ["./radiance"]
+

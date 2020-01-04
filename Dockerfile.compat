@@ -1,0 +1,50 @@
+FROM ubuntu:16.04
+
+# Pixelpusher layer containerization
+RUN mkdir radiance-pixelpusher
+WORKDIR /radiance-pixelpusher/
+COPY . .
+
+# Refresh package lists and grab repository tools
+# left out libsdl2-dev libsdl2-ttf-dev
+RUN \
+apt-get update \
+&& apt-get install --no-install-recommends software-properties-common -y \
+#
+# Add newer toolchain
+&& apt-add-repository ppa:ubuntu-toolchain-r/test -y \
+&& apt-get update \
+#
+# Grab cmake thru pip
+# This could be optimized but it's a quick and dirty solution for debug versions
+&& apt-get install --no-install-recommends python-pip -y \
+&& pip install --no-cache-dir --upgrade cmake \
+&& export PATH="/usr/local/lib/python2.7/dist-packages:$PATH" \
+#
+# Key dependencies: sdl2
+&& apt-get install -y libsdl2-dev libsdl2-ttf-dev \
+#
+# Install GCC/G++-9 as default C compiler
+&& apt install --no-install-recommends gcc-9 g++-9 -y \
+&& update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 30 \
+&& update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 30 \
+#
+# Build task
+&& mkdir build \
+&& cd build \
+&& cmake .. \
+&& make -j4 \
+#
+# Cleanup
+&& apt purge software-properties-common -y \
+&& pip freeze | xargs pip uninstall -y \
+&& apt purge python-pip -y \
+&& apt autoremove -y \
+&& apt clean \
+&& rm -rvf /var/lib/apt/lists/* \
+&& rm -rvf radiance \
+&& rm -rvf src CMakeLists.txt .git* Dockerfile* README.md
+
+WORKDIR /radiance-pixelpusher/build/
+CMD ["./run.exe"]
+
